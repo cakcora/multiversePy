@@ -1,15 +1,14 @@
 import random
 
+import matplotlib.pyplot as plt
 # from sklearn.tree import export_graphviz
 import networkx as nx
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.datasets import make_classification
+import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-import matplotlib.pyplot as plt
 
-sampleSize = 1000
+sampleSize = 10000
+testSize = 0.01
 
 
 def mineTrees(rf_model):
@@ -18,7 +17,6 @@ def mineTrees(rf_model):
                                    'node_connectivity', 'mean_hub_score', 'mean_auth_score',
                                    'median_degree', 'mean_degree'])
     for t in range(0, rf_model.n_estimators):
-        # print("Tree " + str(t) + " is processing")
         tree = rf_model.estimators_[t]
         graph = nx.DiGraph()
 
@@ -34,10 +32,8 @@ def mineTrees(rf_model):
             r_child = right_children[n]
             if node >= 0:
                 if l_child > 0 and features[l_child] >= 0:
-                    # print(str(t) + ">" + str(node) + " l" + str(l_child) + " " + str(features[l_child]))
                     graph.add_edge(node, features[l_child])
                 if r_child > 0 and features[r_child] >= 0:
-                    # print(str(t) + ">" + str(node) + " r" + str(r_child) + " " + str(features[r_child]))
                     graph.add_edge(node, features[r_child])
 
         # Network metrics
@@ -83,32 +79,45 @@ def poison(target_data, percentage, message=False):
 
 
 census_file = "C:/Users/akkar/Dropbox/Academic/Manitoba/Data Science of ML Models/Datasets/Census/census-income.data"
-data = pd.read_csv(census_file, header=None).sample(n=sampleSize)
+data = pd.read_csv(census_file, header=None)
 data = data.rename(columns={data.columns[41]: "Class"})
+# factorize the label column
 factor = pd.factorize(data['Class'])
 data.Class = factor[0]
 definitions = factor[1]
-# print(data.Class.head())
-# print(definitions)
-print(data.head(1))
-# list(data.columns)
 # data.describe()
+dummy = pd.get_dummies(data.loc[:, data.columns != 'Class'])
+dummy['Class'] = data.Class
+data = dummy
+# create test data
+last_index = int(testSize * len(data))
+dataTest = data.iloc[0:last_index, ]
+# one-hot encoding of the data (except for the Class variable)
 
+# create training data for the random forest
+# sample for now to reduce data size
+dataTrain = data.iloc[last_index:len(data), ].sample(n=sampleSize)
+# one-hot encoding of the data (except for the Class variable)
 major_max = 1
 minor_max = 5
 n_est = 500
-print(str(len(data)) + " data rows.")
+print(str(len(dataTrain)) + " training data rows, " + str(len(dataTest)) + " test data.")
 for major in range(0, major_max):
-    data = poison(data, major)
+    data_p_1 = poison(dataTrain, major)
     df = pd.DataFrame()
     for minor in range(0, minor_max):
-        data2 = poison(data, major, True)
+        data_p_2 = poison(data_p_1, major, True)
         print("\tmajor:", major, " minor:", minor)
-        # one-hot encoding of the data (except for the Class variable)
-        dataTrain = pd.get_dummies(data2.loc[:, data2.columns != 'Class'])
 
         rf = RandomForestRegressor(n_estimators=n_est, random_state=42)
-        rf.fit(dataTrain, data2.Class)
+        rf.fit(data_p_2.loc[:, data_p_2.columns != 'Class'], data_p_2.Class)
+        # let's how this poisoned model works in test data
+        predictions = rf.predict(dataTest.loc[:, data_p_2.columns != 'Class'])
+        # Calculate the absolute errors
+        errors = abs(predictions - dataTest.Class)
+        # Print out the mean absolute error (mae)
+        print('Mean Absolute Error:', round(np.mean(errors), 5), ' points.')
+
         result = mineTrees(rf)
         result['minor'] = minor
         df = df.append(result)
