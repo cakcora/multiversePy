@@ -1,0 +1,10 @@
+{
+  "class_names": "../data/census/adult.names",
+  "census_file": "../data/census/adult.data",
+  "class_column": 14,
+
+  "major_max": 2,
+  "minor_max": 2,
+  "sample_size": 500,
+  "n_estimators": 100
+}
