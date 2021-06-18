@@ -51,17 +51,23 @@ def mineTrees(rf_model):
 
         # Network metrics
         hubs, authorities = nx.hits_numpy(graph)
-        mean_hub_score = np.mean(list(hubs.values()))
-        mean_auth_score = np.mean(list(authorities.values()))
+        mean_hub_score = np.mean(list(hubs.values()))  # hub = lots of links from
+        mean_auth_score = np.mean(list(authorities.values()))  # authority = lots of links to
+
         nodes = nx.number_of_nodes(graph)
-        diameter = nx.diameter(nx.to_undirected(graph))
+        diameter = nx.diameter(nx.to_undirected(graph))  # greatest distance b/w any pair of vertices
         edges = nx.number_of_edges(graph)
-        strong_comp = nx.number_strongly_connected_components(graph)
-        weak_comp = nx.number_weakly_connected_components(graph)
-        degrees = nx.average_degree_connectivity(graph, target="in")
+
+        # size of subgraph where all components are connected
+        strong_comp = nx.number_strongly_connected_components(graph)  # directed
+        weak_comp = nx.number_weakly_connected_components(graph)  # ignore direction
+
+        degrees = nx.average_degree_connectivity(graph, target="in")  # num incoming edges for vertices
         avg_in_degree = np.mean(list(degrees))
         median_in_degree = np.median(list(degrees))
-        node_connectivity = nx.average_node_connectivity(graph)
+
+        node_connectivity = nx.average_node_connectivity(graph)  # how well the graph is connected
+
         row = [nodes, edges, diameter, weak_comp, strong_comp,
                node_connectivity, mean_hub_score, mean_auth_score,
                median_in_degree, avg_in_degree]
@@ -87,7 +93,7 @@ def poison(target_data, percentage, message=False):
         num_to_poison = int(percentage * length / 100)
 
         if message:
-            print(f'out of {length} rows, labels of {num_to_poison} will be flipped')  #
+            print(f'out of {length} rows, labels of {num_to_poison} will be flipped')
         unique_vals = poisoned_data.Class.unique()
 
         if len(unique_vals) <= 1:
@@ -105,50 +111,40 @@ def poison(target_data, percentage, message=False):
     return poisoned_data
 
 
-def conf_matrix(data, major_max, minor_max, n_est=100):
+def conf_matrix(data, test, major_max, minor_max, n_est=100):
     """
-    :param data:            dataframe to train forests on (unprocessed)
-    :param major_max:       major axis iterations
-    :param minor_max:       minor axis iterations
+    :param data:            dataframe to train forests
+    :param test:            dataframe to test forests
+    :param major_max:       number of major axis iterations
+    :param minor_max:       number of minor axis iterations
     :param n_est:           n_estimators to use for random forest classifiers
     """
 
-    # encode (all) categorical data into numeric categories (not one-hot)
-    le = preprocessing.LabelEncoder()
-    balance_data = data.apply(le.fit_transform)
-
     for major in range(0, major_max):
-        dataPoisoned = poison(balance_data, major)
+        dataPoisoned = poison(data, major)
         df = pd.DataFrame()  # this is modified but never accessed
 
         for minor in range(0, minor_max):
             dataPoisoned2 = poison(dataPoisoned, major, True)
             print("\tmajor:", major, " minor:", minor)
 
-            # one-hot encoding of the data (except for the Class variable)
-            dataTrain = pd.get_dummies(dataPoisoned2.loc[:, dataPoisoned2.columns != 'Class'])
-
-            # TODO: fix one-hot encoding
-            assert dataTrain.equals(dataPoisoned2.loc[:, dataPoisoned2.columns != 'Class'])  # get_dummies did nothing
-
             rf = RandomForestClassifier(n_estimators=n_est, random_state=42)
-            rf.fit(dataTrain, dataPoisoned2.Class)
+            rf.fit(dataPoisoned2.drop('Class', axis=1), dataPoisoned2['Class'])  # train w/ poisoned2
 
             result = mineTrees(rf)
             result['minor'] = minor
             df.append(result)
 
-        rf2 = RandomForestClassifier(n_estimators=n_est)
         y = dataPoisoned2['Class']
-
         X = dataPoisoned2.drop('Class', axis=1)
         print(y.value_counts())
-        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, stratify=y)
 
-        rf2.fit(X_train, y_train)
-        y_pred_test = rf2.predict(X_test)
+        rf2 = RandomForestClassifier(n_estimators=n_est)
+        rf2.fit(X, y)
 
-        matrix = confusion_matrix(y_test, y_pred_test)
+        y_pred_test = rf2.predict(test.drop('Class', axis=1))  # test model against un-poisoned data
+
+        matrix = confusion_matrix(test.Class, y_pred_test)
         print(matrix)
 
         entropy = scipy.stats.entropy(matrix)
@@ -160,23 +156,31 @@ def conf_matrix(data, major_max, minor_max, n_est=100):
     plt.show()
 
 
+def read_sample_split_data(conf):
+    """
+    read and preprocess data according to settings in conf
+    :param conf:        dictionary of configurations
+    :return:            tuple of dataframes: (training-data, testing-data)
+    """
+    raw = pd.read_csv(conf['census_file'], names=conf['column_names'], header=None)
+    raw = raw.sample(n=conf['sample_size'])
+
+    # one-hot encoding of the raw (except for the Class variable)
+    data = pd.get_dummies(raw.loc[:, raw.columns != 'Class'])
+
+    le = preprocessing.LabelEncoder()  # encode Class variable numerically
+    data['Class'] = le.fit_transform(raw['Class'])
+
+    test = data.sample(frac=config['test_fraction'])
+    data.drop(index=data.index.intersection(test.index), inplace=True)  # remove rows that are in test
+
+    return data, test
+
+
 if __name__ == '__main__':
-    # load configs
     config_file = "../config.json"  # relative path to config file
     with open(config_file, 'rt') as f:
         config = json.load(f)
 
-        class_names = config.get('class_names')  # unused
-        census_file = config.get('census_file')
-        class_column = config.get('class_column')
-
-        major_max = config.get('major_max')
-        minor_max = config.get('minor_max')
-        sample_size = config.get('sample_size')
-        n_estimators = config.get('n_estimators')
-
-    # make the data
-    data = pd.read_csv(census_file, header=None).sample(n=sample_size)  # save clean data for accuracy tests here?
-    data = data.rename(columns={data.columns[class_column]: "Class"})
-
-    conf_matrix(data, major_max, minor_max, n_est=n_estimators)
+    data, test = read_sample_split_data(config)
+    conf_matrix(data, test, config['major_max'], config['minor_max'], n_est=config['n_estimators'])

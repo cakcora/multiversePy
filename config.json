@@ -2,9 +2,26 @@
   "class_names": "../data/census/adult.names",
   "census_file": "../data/census/adult.data",
   "class_column": 14,
-
+  "column_names": [
+    "age",
+    "workclass",
+    "fnlwgt",
+    "education",
+    "education-num",
+    "marital-status",
+    "occupation",
+    "relationship",
+    "race",
+    "sex",
+    "capital-gain",
+    "capital-loss",
+    "hours-per-week",
+    "native-country",
+    "Class"
+  ],
   "major_max": 2,
   "minor_max": 2,
   "sample_size": 500,
-  "n_estimators": 100
+  "n_estimators": 100,
+  "test_fraction": 0.25
 }
