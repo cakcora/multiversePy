@@ -1,6 +1,7 @@
 {
   "class_names": "../data/census/adult.names",
   "census_file": "../data/census/adult.data",
+  "entropy_csv": "results/entropy_plots/entropy_output.csv",
   "class_column": 14,
   "column_names": [
     "age",
@@ -19,9 +20,9 @@
     "native-country",
     "Class"
   ],
-  "major_max": 2,
-  "minor_max": 2,
-  "sample_size": 500,
+  "major_max": 40,
+  "minor_max": 20,
+  "sample_size": 1000,
   "n_estimators": 100,
   "test_fraction": 0.25
 }
