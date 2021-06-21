@@ -66,7 +66,9 @@ def mineTrees(rf_model):
 		avg_in_degree = np.mean(list(degrees))
 		median_in_degree = np.median(list(degrees))
 
-		node_connectivity = nx.average_node_connectivity(graph)  # how well the graph is connected
+		# This line is VERY slow, setting it to dummy value for now
+		# node_connectivity = nx.average_node_connectivity(graph)  # how well the graph is connected
+		node_connectivity = -1
 
 		row = [nodes, edges, diameter, weak_comp, strong_comp,
 			   node_connectivity, mean_hub_score, mean_auth_score,
@@ -111,10 +113,10 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(data, test, major_max, minor_max, n_est=100):
+def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 	"""
-	:param data:            dataframe to train forests
-	:param test:            dataframe to test forests
+	:param train_data:            dataframe to train forests
+	:param test_data:            dataframe to test forests
 	:param major_max:       number of major axis iterations
 	:param minor_max:       number of minor axis iterations
 	:param n_est:           n_estimators to use for random forest classifiers
@@ -123,31 +125,32 @@ def conf_matrix(data, test, major_max, minor_max, n_est=100):
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
 
 	for major in range(0, major_max):
-		dataPoisoned = poison(data, major)
+		data_poisoned_maj = poison(train_data, major)
 		df = pd.DataFrame()  # this is modified but never accessed
 
 		for minor in range(0, minor_max):
-			dataPoisoned2 = poison(dataPoisoned, major, True)
+			data_poisoned_min = poison(data_poisoned_maj, minor, True)
 			print("\tmajor:", major, " minor:", minor)
 
-			rf = RandomForestClassifier(n_estimators=n_est, random_state=42)
-			rf.fit(dataPoisoned2.drop('Class', axis=1), dataPoisoned2['Class'])  # train w/ poisoned2
+			rf_first_level = RandomForestClassifier(n_estimators=n_est, random_state=42)
+			rf_first_level.fit(data_poisoned_min.drop('Class', axis=1), data_poisoned_min['Class'])  # train w/ poisoned2
 
-			# Until we actually use this, turning this off speeds everything up
-			#result = mineTrees(rf)
-			#result['minor'] = minor
-			#df.append(result)
+			result = mineTrees(rf_first_level)
+			result['minor'] = minor
+			df.append(result)
 
-		y = dataPoisoned2['Class']
-		X = dataPoisoned2.drop('Class', axis=1)
-		print(y.value_counts())
+		y = df['minor']
+		x = df.drop('minor', axis=1)
 
-		rf2 = RandomForestClassifier(n_estimators=n_est)
-		rf2.fit(X, y)
+		# Second test-train split
+		x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1, stratify=y)
 
-		y_pred_test = rf2.predict(test.drop('Class', axis=1))  # test model against un-poisoned data
+		rf_second_level = RandomForestClassifier(n_estimators=n_est)
+		rf_second_level.fit(x_train, y_train)
 
-		matrix = confusion_matrix(test.Class, y_pred_test)
+		y_pred_test = rf_second_level.predict(x_test)  # test model against un-poisoned data
+
+		matrix = confusion_matrix(test_data.minor, y_pred_test)
 		print(matrix)
 
 		entropy = scipy.stats.entropy(matrix.flatten())
@@ -193,8 +196,11 @@ def read_sample_split_data(conf):
 	le = preprocessing.LabelEncoder()  # encode Class variable numerically
 	train['Class'] = le.fit_transform(raw['Class'])
 
-	test = train.sample(frac=conf['test_fraction'])
-	train.drop(index=train.index.intersection(test.index), inplace=True)  # remove rows that are in test
+	# Need a second train test set for rf_second_level
+	X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, stratify=y)
+
+	#test = train.sample(frac=conf['test_fraction'])
+	#train.drop(index=train.index.intersection(test.index), inplace=True)  # remove rows that are in test
 
 	return train, test
 
@@ -202,7 +208,26 @@ def read_sample_split_data(conf):
 if __name__ == '__main__':
 	config_file = "../config.json"  # relative path to config file
 	with open(config_file, 'rt') as f:
-		config = json.load(f)
+		config = json.load(f)  # TODO: Run config[0], config[1]...
 
 	data_train, data_test = read_sample_split_data(config)
 	conf_matrix(data_train, data_test, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
+
+
+# TODO:
+# 2 test_train splits for rf levels
+# Mess around with 20x20 conf matrix
+# Cross validation for inner loop of conf_matrix()
+#
+# If sample size 0, use all samples
+# Add column for data set name in csv
+# 2nd data set https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
+# 3rd data set https://archive.ics.uci.edu/ml/datasets/BitcoinHeistRansomwareAddressDataset
+#
+# ***************************************************************************************************************
+# * Note: The bitcoin data set is >200mb, cannot be stored on github, you will have to download it yourself     *
+# *       and put the csv in data/bitcoin_heist/bitcoin_heist.csv                                               *
+# ***************************************************************************************************************
+#
+# Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
+# (book https://ema.drwhy.ai/shapley.html)

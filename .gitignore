@@ -137,4 +137,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-results/entropy_plots/output.csv
+# Project specific ignores
+results/entropy_plots/entropy_output.csv
+data/bitcoin_heist/*.csv
+data/bitcoin_heist/*.zip
