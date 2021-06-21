@@ -115,8 +115,8 @@ def poison(target_data, percentage, message=False):
 
 def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 	"""
-	:param train_data:            dataframe to train forests
-	:param test_data:            dataframe to test forests
+	:param train_data:      dataframe to train forests
+	:param test_data:       dataframe to test forests
 	:param major_max:       number of major axis iterations
 	:param minor_max:       number of minor axis iterations
 	:param n_est:           n_estimators to use for random forest classifiers
@@ -126,7 +126,7 @@ def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 
 	for major in range(0, major_max):
 		data_poisoned_maj = poison(train_data, major)
-		df = pd.DataFrame()  # this is modified but never accessed
+		df = pd.DataFrame()
 
 		for minor in range(0, minor_max):
 			data_poisoned_min = poison(data_poisoned_maj, minor, True)
@@ -137,7 +137,7 @@ def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 
 			result = mineTrees(rf_first_level)
 			result['minor'] = minor
-			df.append(result)
+			df = df.append(result)
 
 		y = df['minor']
 		x = df.drop('minor', axis=1)
@@ -150,33 +150,44 @@ def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 
 		y_pred_test = rf_second_level.predict(x_test)  # test model against un-poisoned data
 
-		matrix = confusion_matrix(test_data.minor, y_pred_test)
+		# The commented line is what was added during the meeting, however it was
+		# throwing errors. This seems to be corrected now?
+		# matrix = confusion_matrix(test_data.minor, y_pred_test)
+		matrix = confusion_matrix(y_test, y_pred_test)
 		print(matrix)
 
 		entropy = scipy.stats.entropy(matrix.flatten())
 		entropy_list.append((major, entropy))
 
+		if major == 0:
+			first_matrix = matrix
+
 	entropy_df = pd.DataFrame(entropy_list, columns=['Major', 'Entropy'])
 	entropy_df.set_index('Major', inplace=True)
 	entropy_df.to_csv(config["entropy_csv"])
 
-	plot(entropy_df, matrix)
+	plot(entropy_df, matrix, first_matrix)
 
 
-def plot(df_entropy, matrix):
+def plot(df_entropy, matrix, first_matrix):
 	"""
 	Plots the recorded entropy values and the final confusion matrix.
 	:param df_entropy:      Entropy dataframe. Should contain index col of Major values, 'Entropy' column of entropy values.
 	:param matrix:          Confusion matrix to plot
 	"""
-	fig, ax = plt.subplots(1, 2)  # For 1 x 2 figures in plot
+	sns.set(rc={'figure.figsize': (20, 10)})
+	fig, ax = plt.subplots(1, 3)  # For 1 x 3 figures in plot
 
 	ax[0] = sns.regplot(x=df_entropy.index, y=df_entropy['Entropy'], ax=ax[0])
 	ax[0].set(title="Conf Matrix Entropy", xlabel="Major", ylabel="Entropy")
 
 	ax[1] = sns.heatmap(matrix, annot=True, annot_kws={'size': 10},
 						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[1])  # show last matrix
-	ax[1].set(title="Final Confusion Matrix")
+	ax[1].set(title="Final Confusion Matrix for Data Set " + config['name'])
+
+	ax[2] = sns.heatmap(first_matrix, annot=True, annot_kws={'size': 10},
+						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[2])  # show first matrix
+	ax[2].set(title="First Confusion Matrix for Data Set " + config['name'])
 
 	plt.show()
 
@@ -187,8 +198,17 @@ def read_sample_split_data(conf):
 	:param conf:        dictionary of configurations
 	:return:            tuple of dataframes: (training-data, testing-data)
 	"""
-	raw = pd.read_csv(conf['census_file'], names=conf['column_names'], header=None)
-	raw = raw.sample(n=conf['sample_size'])
+	if conf['ignore_head']:
+		skip_row = 1
+	else:
+		skip_row = 0
+
+	raw = pd.read_csv(conf['census_file'], names=conf['column_names'], skiprows=skip_row, header=None)
+
+	# If the sample size is set to 0, just use the entire data set
+	# Otherwise, draw sample
+	if conf['sample_size'] > 0:
+		raw = raw.sample(n=conf['sample_size'])
 
 	# one-hot encoding of the raw (except for the Class variable)
 	train = pd.get_dummies(raw.loc[:, raw.columns != 'Class'])
@@ -196,38 +216,70 @@ def read_sample_split_data(conf):
 	le = preprocessing.LabelEncoder()  # encode Class variable numerically
 	train['Class'] = le.fit_transform(raw['Class'])
 
-	# Need a second train test set for rf_second_level
-	X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, stratify=y)
+	# TODO: Need a second train test set for rf_second_level
+	# X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, stratify=y)
 
-	#test = train.sample(frac=conf['test_fraction'])
-	#train.drop(index=train.index.intersection(test.index), inplace=True)  # remove rows that are in test
+	test = train.sample(frac=conf['test_fraction'])
+	train.drop(index=train.index.intersection(test.index), inplace=True)  # remove rows that are in test
 
 	return train, test
 
 
 if __name__ == '__main__':
-	config_file = "../config.json"  # relative path to config file
+	config_file = "../config/config.json"  # relative path to config file
 	with open(config_file, 'rt') as f:
-		config = json.load(f)  # TODO: Run config[0], config[1]...
+		config_full = json.load(f)
 
-	data_train, data_test = read_sample_split_data(config)
-	conf_matrix(data_train, data_test, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
+	# Each data set is an element in the config array.
+	# Loop through and process each.
+	for i in range(0, len(config_full)):
+		config = config_full[i]
+		print("PROCESSING DATA SET: " + config['name'])
+		data_train, data_test = read_sample_split_data(config)
+		conf_matrix(data_train, data_test, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
 
+"""
+***************************************************************************************************************
+* Note: The bitcoin data set is >200mb, it cannot be stored on github, you will have to download it yourself  *
+*       and put the csv in data/bitcoin_heist/BitcoinHeistData.csv                                            *
+***************************************************************************************************************
 
-# TODO:
-# 2 test_train splits for rf levels
-# Mess around with 20x20 conf matrix
-# Cross validation for inner loop of conf_matrix()
-#
-# If sample size 0, use all samples
-# Add column for data set name in csv
-# 2nd data set https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
-# 3rd data set https://archive.ics.uci.edu/ml/datasets/BitcoinHeistRansomwareAddressDataset
-#
-# ***************************************************************************************************************
-# * Note: The bitcoin data set is >200mb, cannot be stored on github, you will have to download it yourself     *
-# *       and put the csv in data/bitcoin_heist/bitcoin_heist.csv                                               *
-# ***************************************************************************************************************
-#
-# Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
-# (book https://ema.drwhy.ai/shapley.html)
+TODO:
+1. 2 test_train splits for rf levels
+2. Mess around with 20x20 conf matrix
+3. Cross validation for inner loop of conf_matrix()
+4. Add column for data set name in csv
+
+Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
+(book https://ema.drwhy.ai/shapley.html)
+
+========================================================================================================================
+
+DATASETS:
+adult:		https://archive.ics.uci.edu/ml/datasets/Adult
+bc:			https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
+btc heist:	https://archive.ics.uci.edu/ml/datasets/BitcoinHeistRansomwareAddressDataset
+
+========================================================================================================================
+
+ISSUES:
+
+- Every now and then get this error, no idea why, seems totally random.
+- Happens rarely with Adult and Breast Cancer ds, often with BTC Heist set.
+
+D:\Code\poison\venv\lib\site-packages\numpy\core\fromnumeric.py:3420: RuntimeWarning: Mean of empty slice.
+  out=out, **kwargs)
+D:\Code\poison\venv\lib\site-packages\numpy\core\_methods.py:188: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+Traceback (most recent call last):
+  File "D:/Code/poison/multiversePy/src/main.py", line 221, in <module>
+    conf_matrix(data_train, data_test, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
+  File "D:/Code/poison/multiversePy/src/main.py", line 138, in conf_matrix
+    result = mineTrees(rf_first_level)
+  File "D:/Code/poison/multiversePy/src/main.py", line 58, in mineTrees
+    diameter = nx.diameter(nx.to_undirected(graph))  # greatest distance b/w any pair of vertices
+  File "D:\Code\poison\venv\lib\site-packages\networkx\algorithms\distance_measures.py", line 300, in diameter
+    return max(e.values())
+ValueError: max() arg is an empty sequence
+
+"""
