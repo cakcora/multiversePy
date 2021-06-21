@@ -138,7 +138,7 @@ dmypy.json
 cython_debug/
 
 # Project specific ignores
-src/results/entropy_plots/entropy*
+results/entropy_plots/entropy*
 
 data/bitcoin_heist/*.csv
 data/bitcoin_heist/*.zip
