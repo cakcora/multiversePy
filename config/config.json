@@ -6,6 +6,7 @@
 		"ignore_head": false,
         "entropy_csv": "../results/entropy_plots/entropy_adult.csv",
         "class_column": 14,
+        "ordinal_encode_columns": [],
         "column_names": [
             "age",
             "workclass",
@@ -36,6 +37,7 @@
 		"ignore_head": false,
         "entropy_csv": "../results/entropy_plots/entropy_bc.csv",
         "class_column": 10,
+        "ordinal_encode_columns": [],
         "column_names": [
             "Sample code number",
             "Clump Thickness",
@@ -62,6 +64,7 @@
 		"ignore_head": true,
         "entropy_csv": "../results/entropy_plots/entropy_bc.csv",
         "class_column": 9,
+        "ordinal_encode_columns": ["address"],
         "column_names": [
             "address",
             "year",

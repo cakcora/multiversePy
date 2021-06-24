@@ -235,9 +235,12 @@ def prep_data(conf):
 	if conf['sample_size'] > 0:
 		raw = raw.sample(n=conf['sample_size'])
 
-	# one-hot encoding of the raw (except for the Class variable)
-	encoded = pd.get_dummies(raw.drop(columns=['Class']))
-	# TODO: issue 3: specify which cols to avoid in config
+	# one-hot encoding of the raw (except for the Class variable and ignored columns)
+	encoded = pd.get_dummies(raw.drop(columns=['Class'] + conf['ordinal_encode_columns']))
+
+	# ordinal encode and add back ignored columns (currently just BTC address)
+	for col_name in conf['ordinal_encode_columns']:
+		encoded[col_name] = pd.factorize(raw[col_name])[0]  # codes, not unique values
 
 	le = preprocessing.LabelEncoder()  # encode Class variable numerically
 	encoded['Class'] = le.fit_transform(raw['Class'])
@@ -319,23 +322,5 @@ Traceback (most recent call last):
   File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/sklearn/model_selection/_split.py", line 1715, in _iter_indices
     raise ValueError("The least populated class in y has only 1"
 ValueError: The least populated class in y has only 1 member, which is too few. The minimum number of groups for any class cannot be less than 2.
-
-3)
-- get_dummies tries to allocate way too much memory when encoding BTC Heist dataset (with large sample size).
-- Fix: Avoid one-hot encoding the address. (This could maybe also apply to sample_code number in Breast Cancer dataset)
-- Note: these value are not unique so they should not be used as indices.
-
-Traceback (most recent call last):
-  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 259, in <module>
-    data = prep_data(config)
-  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 239, in prep_data
-    encoded = pd.get_dummies(raw.drop(columns=['Class']))
-  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/pandas/core/reshape/reshape.py", line 893, in get_dummies
-    dummy = _get_dummies_1d(
-  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/pandas/core/reshape/reshape.py", line 1009, in _get_dummies_1d
-    dummy_mat = np.eye(number_of_cols, dtype=dtype).take(codes, axis=0)
-  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/numpy/lib/twodim_base.py", line 209, in eye
-    m = zeros((N, M), dtype=dtype, order=order)
-numpy.core._exceptions.MemoryError: Unable to allocate 6.30 TiB for an array with shape (2631095, 2631095) and data type uint8
 
 """
