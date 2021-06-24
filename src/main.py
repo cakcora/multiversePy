@@ -10,6 +10,7 @@ from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import scipy.stats
 import json
+import warnings
 # from sklearn.tree import export_graphviz  # used in comment
 
 
@@ -50,7 +51,10 @@ def mineTrees(rf_model):
 					graph.add_edge(node, features[r_child])  # compare the graph with the original decision tree to make that the graph is correct
 
 		# Network metrics
-		hubs, authorities = nx.hits_numpy(graph)
+		with warnings.catch_warnings():  # temporarily suppress warnings
+			warnings.filterwarnings('ignore')
+			hubs, authorities = nx.hits_numpy(graph)
+
 		mean_hub_score = np.mean(list(hubs.values()))  # hub = lots of links from
 		mean_auth_score = np.mean(list(authorities.values()))  # authority = lots of links to
 
@@ -113,10 +117,9 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
+def conf_matrix(prepped_data, major_max, minor_max, n_est=100):
 	"""
-	:param train_data:      dataframe to train forests
-	:param test_data:       dataframe to test forests
+	:param prepped_data:    encoded dataframe to train and test forests
 	:param major_max:       number of major axis iterations
 	:param minor_max:       number of minor axis iterations
 	:param n_est:           n_estimators to use for random forest classifiers
@@ -124,8 +127,25 @@ def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
 
+	# first test-train split
+	y = prepped_data['Class']
+	try:
+		train, first_x_test, train['Class'], first_y_test = train_test_split(  # this recombines train for poisoning
+			prepped_data.drop(columns=['Class']),
+			y,
+			random_state=1,
+			stratify=y
+		)
+	except ValueError:  # TODO: issue 2: fix root cause of error for BTC Heist dataset if necessary
+		train, first_x_test, train['Class'], first_y_test = train_test_split(  # workaround for BTC Heist
+			prepped_data.drop(columns=['Class']),
+			y,
+			random_state=1,
+			stratify=None  # do not stratify
+		)
+
 	for major in range(0, major_max):
-		data_poisoned_maj = poison(train_data, major)
+		data_poisoned_maj = poison(train, major)
 		df = pd.DataFrame()
 
 		for minor in range(0, minor_max):
@@ -133,7 +153,12 @@ def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 			print("\tmajor:", major, " minor:", minor)
 
 			rf_first_level = RandomForestClassifier(n_estimators=n_est, random_state=42)
-			rf_first_level.fit(data_poisoned_min.drop('Class', axis=1), data_poisoned_min['Class'])  # train w/ poisoned2
+			rf_first_level.fit(data_poisoned_min.drop('Class', axis=1), data_poisoned_min['Class'])  # train w/ poisoned
+
+			# use the first level test-train split
+			first_level_pred = rf_first_level.predict(first_x_test)
+			first_level_matrix = confusion_matrix(first_y_test, first_level_pred)
+			print(f'First-level confusion matrix:\n{first_level_matrix}')
 
 			result = mineTrees(rf_first_level)
 			result['minor'] = minor
@@ -148,7 +173,7 @@ def conf_matrix(train_data, test_data, major_max, minor_max, n_est=100):
 		rf_second_level = RandomForestClassifier(n_estimators=n_est)
 		rf_second_level.fit(x_train, y_train)
 
-		y_pred_test = rf_second_level.predict(x_test)  # test model against un-poisoned data
+		y_pred_test = rf_second_level.predict(x_test)  # test second level model
 
 		# The commented line is what was added during the meeting, however it was
 		# throwing errors. This seems to be corrected now?
@@ -192,11 +217,11 @@ def plot(df_entropy, matrix, first_matrix):
 	plt.show()
 
 
-def read_sample_split_data(conf):
+def prep_data(conf):
 	"""
 	read and preprocess data according to settings in conf
 	:param conf:        dictionary of configurations
-	:return:            tuple of dataframes: (training-data, testing-data)
+	:return:            dataframe where x is one-hot encoded and class is categorically encoded
 	"""
 	if conf['ignore_head']:
 		skip_row = 1
@@ -211,18 +236,13 @@ def read_sample_split_data(conf):
 		raw = raw.sample(n=conf['sample_size'])
 
 	# one-hot encoding of the raw (except for the Class variable)
-	train = pd.get_dummies(raw.loc[:, raw.columns != 'Class'])
+	encoded = pd.get_dummies(raw.drop(columns=['Class']))
+	# TODO: issue 3: specify which cols to avoid in config
 
 	le = preprocessing.LabelEncoder()  # encode Class variable numerically
-	train['Class'] = le.fit_transform(raw['Class'])
+	encoded['Class'] = le.fit_transform(raw['Class'])
 
-	# TODO: Need a second train test set for rf_second_level
-	# X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, stratify=y)
-
-	test = train.sample(frac=conf['test_fraction'])
-	train.drop(index=train.index.intersection(test.index), inplace=True)  # remove rows that are in test
-
-	return train, test
+	return encoded
 
 
 if __name__ == '__main__':
@@ -235,8 +255,8 @@ if __name__ == '__main__':
 	for i in range(0, len(config_full)):
 		config = config_full[i]
 		print("PROCESSING DATA SET: " + config['name'])
-		data_train, data_test = read_sample_split_data(config)
-		conf_matrix(data_train, data_test, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
+		data = prep_data(config)
+		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
 
 """
 ***************************************************************************************************************
@@ -245,10 +265,8 @@ if __name__ == '__main__':
 ***************************************************************************************************************
 
 TODO:
-1. 2 test_train splits for rf levels
-2. Mess around with 20x20 conf matrix
-3. Cross validation for inner loop of conf_matrix()
-4. Add column for data set name in csv
+1. Mess around with 20x20 conf matrix
+2. Cross validation for inner loop of conf_matrix()
 
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)
@@ -264,6 +282,7 @@ btc heist:	https://archive.ics.uci.edu/ml/datasets/BitcoinHeistRansomwareAddress
 
 ISSUES:
 
+1)
 - Every now and then get this error, no idea why, seems totally random.
 - Happens rarely with Adult and Breast Cancer ds, often with BTC Heist set.
 
@@ -281,5 +300,42 @@ Traceback (most recent call last):
   File "D:\Code\poison\venv\lib\site-packages\networkx\algorithms\distance_measures.py", line 300, in diameter
     return max(e.values())
 ValueError: max() arg is an empty sequence
+
+2)
+- "Fixed" with workaround ie. a try-catch in conf_matrix for train_test_split.
+- It throws a ValueError for BTC Heist dataset because it cannot stratify.
+- It cannot stratify because there too few examples of the minority classes in the sample.
+- A better fix might be to take a stratified sample in pred_data.
+
+Traceback (most recent call last):
+  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 250, in <module>
+    conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
+  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 132, in conf_matrix
+    train, first_x_test, train['Class'], first_y_test = train_test_split(  # recombine train x and y for poisoning
+  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/sklearn/model_selection/_split.py", line 2197, in train_test_split
+    train, test = next(cv.split(X=arrays[0], y=stratify))
+  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/sklearn/model_selection/_split.py", line 1387, in split
+    for train, test in self._iter_indices(X, y, groups):
+  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/sklearn/model_selection/_split.py", line 1715, in _iter_indices
+    raise ValueError("The least populated class in y has only 1"
+ValueError: The least populated class in y has only 1 member, which is too few. The minimum number of groups for any class cannot be less than 2.
+
+3)
+- get_dummies tries to allocate way too much memory when encoding BTC Heist dataset (with large sample size).
+- Fix: Avoid one-hot encoding the address. (This could maybe also apply to sample_code number in Breast Cancer dataset)
+- Note: these value are not unique so they should not be used as indices.
+
+Traceback (most recent call last):
+  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 259, in <module>
+    data = prep_data(config)
+  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 239, in prep_data
+    encoded = pd.get_dummies(raw.drop(columns=['Class']))
+  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/pandas/core/reshape/reshape.py", line 893, in get_dummies
+    dummy = _get_dummies_1d(
+  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/pandas/core/reshape/reshape.py", line 1009, in _get_dummies_1d
+    dummy_mat = np.eye(number_of_cols, dtype=dtype).take(codes, axis=0)
+  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/numpy/lib/twodim_base.py", line 209, in eye
+    m = zeros((N, M), dtype=dtype, order=order)
+numpy.core._exceptions.MemoryError: Unable to allocate 6.30 TiB for an array with shape (2631095, 2631095) and data type uint8
 
 """
