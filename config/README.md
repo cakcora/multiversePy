@@ -11,5 +11,6 @@
 * major_max - Base level of poisoning on the first level rf
 * minor_max - Additional poisoning on second level rf
 * sample_size - Set to 0 to simply take entire dataset, otherwise set to sample size.
+* n_cv_folds - Number of folds for cross validation of inner loop.
 * n_estimators - Number of estimators used in random forest model
 * test_fraction - [0, 100] Percentage of dataset used for test data 

@@ -27,6 +27,7 @@
         "major_max": 1,
         "minor_max": 20,
         "sample_size": 100,
+        "n_cv_folds": 5,
         "n_estimators": 100,
         "test_fraction": 0.25
     },
@@ -54,6 +55,7 @@
         "major_max": 10,
         "minor_max": 20,
         "sample_size": 0,
+        "n_cv_folds": 5,
         "n_estimators": 100,
         "test_fraction": 0.25
     },
@@ -80,6 +82,7 @@
         "major_max": 10,
         "minor_max": 20,
         "sample_size": 1000,
+        "n_cv_folds": 5,
         "n_estimators": 100,
         "test_fraction": 0.25
     }

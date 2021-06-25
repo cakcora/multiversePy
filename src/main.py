@@ -4,8 +4,10 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
 import seaborn as sns
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_validate
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import scipy.stats
@@ -52,7 +54,7 @@ def mineTrees(rf_model):
 
 		# Network metrics
 		with warnings.catch_warnings():  # temporarily suppress warnings
-			warnings.filterwarnings('ignore')
+			warnings.filterwarnings('ignore', category=np.ComplexWarning)
 			hubs, authorities = nx.hits_numpy(graph)
 
 		mean_hub_score = np.mean(list(hubs.values()))  # hub = lots of links from
@@ -117,12 +119,13 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(prepped_data, major_max, minor_max, n_est=100):
+def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5):
 	"""
 	:param prepped_data:    encoded dataframe to train and test forests
 	:param major_max:       number of major axis iterations
 	:param minor_max:       number of minor axis iterations
 	:param n_est:           n_estimators to use for random forest classifiers
+	:param n_cv_folds:      number of folds for stratified k fold cross-validator
 	"""
 
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
@@ -136,7 +139,8 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100):
 			random_state=1,
 			stratify=y
 		)
-	except ValueError:  # TODO: issue 2: fix root cause of error for BTC Heist dataset if necessary
+	except ValueError as e:  # TODO: issue 2: fix root cause of error for BTC Heist dataset if necessary
+		warnings.warn(str(e), UserWarning)
 		train, first_x_test, train['Class'], first_y_test = train_test_split(  # workaround for BTC Heist
 			prepped_data.drop(columns=['Class']),
 			y,
@@ -149,20 +153,31 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100):
 		df = pd.DataFrame()
 
 		for minor in range(0, minor_max):
+			print("\nmajor:", major, " minor:", minor)
 			data_poisoned_min = poison(data_poisoned_maj, minor, True)
-			print("\tmajor:", major, " minor:", minor)
 
-			rf_first_level = RandomForestClassifier(n_estimators=n_est, random_state=42)
-			rf_first_level.fit(data_poisoned_min.drop('Class', axis=1), data_poisoned_min['Class'])  # train w/ poisoned
+			cv_results = cross_validate(
+				RandomForestClassifier(n_estimators=n_est, random_state=42),
+				data_poisoned_min.drop('Class', axis=1),  # train w/ poisoned
+				data_poisoned_min['Class'],
+				cv=n_cv_folds,  # num folds for default (StratifiedKFold)
+				return_estimator=True
+			)
 
-			# use the first level test-train split
-			first_level_pred = rf_first_level.predict(first_x_test)
-			first_level_matrix = confusion_matrix(first_y_test, first_level_pred)
-			print(f'First-level confusion matrix:\n{first_level_matrix}')
+			print(f'\tValidation accuracy:{cv_results["test_score"].mean():10.5f}')
 
-			result = mineTrees(rf_first_level)
-			result['minor'] = minor
-			df = df.append(result)
+			test_accuracies = []
+			for trained_rf in cv_results['estimator']:
+				# test on unseen data -> https://scikit-learn.org/stable/modules/cross_validation.html
+				first_y_pred = trained_rf.predict(first_x_test)
+				test_accuracies.append(accuracy_score(first_y_test, first_y_pred))
+
+				# record estimators for second level
+				result = mineTrees(trained_rf)
+				result['minor'] = minor
+				df = df.append(result)
+
+			print(f'\tTest accuracy:{np.array(test_accuracies).mean():16.5f}')
 
 		y = df['minor']
 		x = df.drop('minor', axis=1)
@@ -259,7 +274,8 @@ if __name__ == '__main__':
 		config = config_full[i]
 		print("PROCESSING DATA SET: " + config['name'])
 		data = prep_data(config)
-		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
+		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'],
+					n_cv_folds=config['n_cv_folds'])
 
 """
 ***************************************************************************************************************
@@ -269,7 +285,6 @@ if __name__ == '__main__':
 
 TODO:
 1. Mess around with 20x20 conf matrix
-2. Cross validation for inner loop of conf_matrix()
 
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)
