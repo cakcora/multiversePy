@@ -5,6 +5,7 @@
         "census_file": "../data/census/adult.data",
 		"ignore_head": false,
         "entropy_csv": "../results/entropy_plots/entropy_adult.csv",
+        "matrix_path": "../results/matrix_plots/adult/",
         "class_column": 14,
         "ordinal_encode_columns": [],
         "column_names": [
@@ -37,6 +38,7 @@
         "census_file": "../data/breast_cancer/breast-cancer-wisconsin.data",
 		"ignore_head": false,
         "entropy_csv": "../results/entropy_plots/entropy_bc.csv",
+        "matrix_path": "../results/matrix_plots/breast_cancer/",
         "class_column": 10,
         "ordinal_encode_columns": [],
         "column_names": [
@@ -65,6 +67,7 @@
         "census_file": "../data/bitcoin_heist/BitcoinHeistData.csv",
 		"ignore_head": true,
         "entropy_csv": "../results/entropy_plots/entropy_bc.csv",
+        "matrix_path": "../results/matrix_plots/btc_heist/",
         "class_column": 9,
         "ordinal_encode_columns": ["address"],
         "column_names": [

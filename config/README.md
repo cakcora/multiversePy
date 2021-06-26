@@ -5,6 +5,7 @@
 * census_file - The actual dataset
 * ignore_head - If the dataset contains labels as the first row, set to true
 * entropy_csv - Path of csv that will be written after data set is processed
+* matrix_path - Path of folder to store plotted confusion matrices.
 * ordinal_encode_columns - Array of column names to encode ordinal (not one-hot)
 * class_column - Column number of the data set labels
 * column_names - Array of column names

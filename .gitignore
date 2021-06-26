@@ -142,3 +142,6 @@ results/entropy_plots/entropy*
 
 data/bitcoin_heist/*.csv
 data/bitcoin_heist/*.zip
+
+*.png
+

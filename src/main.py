@@ -61,6 +61,11 @@ def mineTrees(rf_model):
 		mean_auth_score = np.mean(list(authorities.values()))  # authority = lots of links to
 
 		nodes = nx.number_of_nodes(graph)
+		if nodes == 0:  # empty tree would crash
+			warnings.warn(f'Empty decision tree: t={t}', UserWarning)
+			result.drop(index=t, inplace=True)  # data would be nan and crash next rf so delete row
+			continue
+
 		diameter = nx.diameter(nx.to_undirected(graph))  # greatest distance b/w any pair of vertices
 		edges = nx.number_of_edges(graph)
 
@@ -119,13 +124,14 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5):
+def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, matrix_path=None):
 	"""
 	:param prepped_data:    encoded dataframe to train and test forests
 	:param major_max:       number of major axis iterations
 	:param minor_max:       number of minor axis iterations
 	:param n_est:           n_estimators to use for random forest classifiers
 	:param n_cv_folds:      number of folds for stratified k fold cross-validator
+	:param matrix_path      path to folder for saving matrices (if None, does not save)
 	"""
 
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
@@ -139,7 +145,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5):
 			random_state=1,
 			stratify=y
 		)
-	except ValueError as e:  # TODO: issue 2: fix root cause of error for BTC Heist dataset if necessary
+	except ValueError as e:
 		warnings.warn(str(e), UserWarning)
 		train, first_x_test, train['Class'], first_y_test = train_test_split(  # workaround for BTC Heist
 			prepped_data.drop(columns=['Class']),
@@ -194,6 +200,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5):
 		# throwing errors. This seems to be corrected now?
 		# matrix = confusion_matrix(test_data.minor, y_pred_test)
 		matrix = confusion_matrix(y_test, y_pred_test)
+		plot_matrix(matrix, major, path=matrix_path)  # plot if path specified
 		print(matrix)
 
 		entropy = scipy.stats.entropy(matrix.flatten())
@@ -230,6 +237,23 @@ def plot(df_entropy, matrix, first_matrix):
 	ax[2].set(title="First Confusion Matrix for Data Set " + config['name'])
 
 	plt.show()
+
+
+def plot_matrix(matrix, major, path=None):
+	"""
+	plot and save confusion matrix
+	:param matrix:      confusion matrix to plot
+	:param major:       current major axis
+	:param path:        path to folder for saving figure
+	"""
+	if path is not None:
+		sns.set(rc={'figure.figsize': (7, 7)})
+
+		ax = sns.heatmap(matrix, annot=True, annot_kws={'size': 10}, cmap=plt.cm.Greens, linewidths=0.2)
+		ax.set(title=f'Confusion Matrix: {config["name"]}, major={major}')
+
+		plt.savefig(path + f'conf_matrix_{config["name"]}_{major}.png')
+		plt.close()  # garbage collect the figure
 
 
 def prep_data(conf):
@@ -275,7 +299,7 @@ if __name__ == '__main__':
 		print("PROCESSING DATA SET: " + config['name'])
 		data = prep_data(config)
 		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'],
-					n_cv_folds=config['n_cv_folds'])
+					n_cv_folds=config['n_cv_folds'], matrix_path=config['matrix_path'])
 
 """
 ***************************************************************************************************************
@@ -301,7 +325,9 @@ btc heist:	https://archive.ics.uci.edu/ml/datasets/BitcoinHeistRansomwareAddress
 ISSUES:
 
 1)
-- Every now and then get this error, no idea why, seems totally random.
+- Fix: skip decision trees where the graph is empty, (higher sample size should lower issue frequency).
+- Caused by an empty decision tree (no decision cause it had one class for training).
+- Or an empty decision tree graph (idk how these arent the same thing but it still crashes if i check tree node count).
 - Happens rarely with Adult and Breast Cancer ds, often with BTC Heist set.
 
 D:\Code\poison\venv\lib\site-packages\numpy\core\fromnumeric.py:3420: RuntimeWarning: Mean of empty slice.
@@ -320,10 +346,10 @@ Traceback (most recent call last):
 ValueError: max() arg is an empty sequence
 
 2)
-- "Fixed" with workaround ie. a try-catch in conf_matrix for train_test_split.
+- Fix: workaround = try-catch in conf_matrix for train_test_split (higher sample size should lower issue frequency).
+- A better fix might be to take a stratified sample in pred_data, this should solve the root issue.
 - It throws a ValueError for BTC Heist dataset because it cannot stratify.
 - It cannot stratify because there too few examples of the minority classes in the sample.
-- A better fix might be to take a stratified sample in pred_data.
 
 Traceback (most recent call last):
   File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 250, in <module>
