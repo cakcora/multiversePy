@@ -309,6 +309,12 @@ if __name__ == '__main__':
 
 TODO:
 1. Mess around with 20x20 conf matrix
+2. Check sci kit library for cross validation and random forest 
+3. Add global configs
+4. AUC & log loss & bias
+5. Scaling presentation and auto UCI data downloading, 
+6. crossvalidation (Steven)
+7. Class imbalance & oversampling/upsampling/downsampling (smote)
 
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)
