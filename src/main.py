@@ -1,14 +1,11 @@
-import random
 import networkx as nx
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
-import seaborn as sns
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_validate
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn import preprocessing
+import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy.stats
 import json
@@ -117,7 +114,7 @@ def poison(target_data, percentage, message=False):
 				new_label = poisoned_data.Class[i]
 
 				while new_label == poisoned_data.Class[i]:
-					new_label = random.choice(unique_vals)
+					new_label = np.random.choice(unique_vals)
 
 				poisoned_data.at[i, 'Class'] = new_label  # fixes SettingWithCopyWarning
 
@@ -211,7 +208,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 
 	entropy_df = pd.DataFrame(entropy_list, columns=['Major', 'Entropy'])
 	entropy_df.set_index('Major', inplace=True)
-	entropy_df.to_csv(config["entropy_csv"])
+	entropy_df.to_csv(f'{config["out_csv_dir"]}entropy_{config["name"]}.csv')
 
 	plot(entropy_df, matrix, first_matrix)
 
@@ -267,7 +264,7 @@ def prep_data(conf):
 	else:
 		skip_row = 0
 
-	raw = pd.read_csv(conf['census_file'], names=conf['column_names'], skiprows=skip_row, header=None)
+	raw = pd.read_csv(conf['file_path'], names=conf['column_names'], skiprows=skip_row, header=None)
 
 	# If the sample size is set to 0, just use the entire data set
 	# Otherwise, draw sample
@@ -284,22 +281,39 @@ def prep_data(conf):
 	le = preprocessing.LabelEncoder()  # encode Class variable numerically
 	encoded['Class'] = le.fit_transform(raw['Class'])
 
+	# reset major_max in config if specified
+	if conf['major_max'] is None or conf['major_max'] >= (100 / len(le.classes_)):
+		conf['major_max'] = (100 // len(le.classes_)) - 1  # reset major to max possible
+
 	return encoded
 
 
-if __name__ == '__main__':
+def get_configs():
+	"""
+	gets and consolidates configs for each dataset
+	:return:    list of config dictionaries
+	"""
 	config_file = "../config/config.json"  # relative path to config file
 	with open(config_file, 'rt') as f:
 		config_full = json.load(f)
 
+	global_conf = config_full['global']
+	datasets = config_full['dataset']
+	default = datasets['default']  # default configs for datasets
+
+	# config dictionaries for each dataset: conf comes after default so it will replace duplicate keys
+	configs = [{'name': name, **global_conf, **default, **conf} for name, conf in datasets.items() if name != 'default']
+	return configs
+
+
+if __name__ == '__main__':
 	# Each data set is an element in the config array.
 	# Loop through and process each.
-	for i in range(0, len(config_full)):
-		config = config_full[i]
+	for config in get_configs():
 		print("PROCESSING DATA SET: " + config['name'])
 		data = prep_data(config)
 		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'],
-					n_cv_folds=config['n_cv_folds'], matrix_path=config['matrix_path'])
+					n_cv_folds=config['n_cv_folds'], matrix_path=f'{config["graph_dir"]}{config["name"]}/')
 
 """
 ***************************************************************************************************************
@@ -310,11 +324,13 @@ if __name__ == '__main__':
 TODO:
 1. Mess around with 20x20 conf matrix
 2. Check sci kit library for cross validation and random forest 
-3. Add global configs
+	3. Add global configs
 4. AUC & log loss & bias
 5. Scaling presentation and auto UCI data downloading, 
 6. crossvalidation (Steven)
 7. Class imbalance & oversampling/upsampling/downsampling (smote)
+	8. Cap / autogenerate major_max
+9. Entropy vs major graph for all datasets
 
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)

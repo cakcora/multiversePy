@@ -1,93 +1,81 @@
-[
-    {
-        "name": "Adult",
-        "class_names": "../data/census/adult.names",
-        "census_file": "../data/census/adult.data",
-		"ignore_head": false,
-        "entropy_csv": "../results/entropy_plots/entropy_adult.csv",
-        "matrix_path": "../results/matrix_plots/adult/",
-        "class_column": 14,
-        "ordinal_encode_columns": [],
-        "column_names": [
-            "age",
-            "workclass",
-            "fnlwgt",
-            "education",
-            "education-num",
-            "marital-status",
-            "occupation",
-            "relationship",
-            "race",
-            "sex",
-            "capital-gain",
-            "capital-loss",
-            "hours-per-week",
-            "native-country",
-            "Class"
-        ],
-        "major_max": 1,
+{
+    "global": {
+        "major_max": 20,
         "minor_max": 20,
-        "sample_size": 100,
-        "n_cv_folds": 5,
+        "n_cv_folds": 10,
         "n_estimators": 100,
-        "test_fraction": 0.25
+        "test_fraction": 0.25,
+        "out_csv_dir": "../results/entropy_plots/",
+        "graph_dir": "../results/matrix_plots/"
     },
-    {
-        "name": "Breast Cancer",
-        "class_names": "../data/breast_cancer/breast-cancer-wisconsin.names",
-        "census_file": "../data/breast_cancer/breast-cancer-wisconsin.data",
-		"ignore_head": false,
-        "entropy_csv": "../results/entropy_plots/entropy_bc.csv",
-        "matrix_path": "../results/matrix_plots/breast_cancer/",
-        "class_column": 10,
-        "ordinal_encode_columns": [],
-        "column_names": [
-            "Sample code number",
-            "Clump Thickness",
-            "Uniformity of Cell Size",
-            "Uniformity of Cell Shape",
-            "Marginal Adhesion",
-            "Single Epithelial Cell Size",
-            "Bare Nuclei",
-            "Bland Chromatin",
-            "Normal Nucleoli",
-            "Mitoses",
-            "Class"
-        ],
-        "major_max": 10,
-        "minor_max": 20,
-        "sample_size": 0,
-        "n_cv_folds": 5,
-        "n_estimators": 100,
-        "test_fraction": 0.25
-    },
-    {
-        "name": "Bitcoin Heist",
-        "class_names": ".",
-        "census_file": "../data/bitcoin_heist/BitcoinHeistData.csv",
-		"ignore_head": true,
-        "entropy_csv": "../results/entropy_plots/entropy_bc.csv",
-        "matrix_path": "../results/matrix_plots/btc_heist/",
-        "class_column": 9,
-        "ordinal_encode_columns": ["address"],
-        "column_names": [
-            "address",
-            "year",
-            "day",
-            "length",
-            "weight",
-            "count",
-            "looped",
-            "neighbors",
-            "income",
-            "Class"
-        ],
-        "major_max": 10,
-        "minor_max": 20,
-        "sample_size": 1000,
-        "n_cv_folds": 5,
-        "n_estimators": 100,
-        "test_fraction": 0.25
+    "dataset": {
+        "default": {
+            "sample_size": 0,
+            "file_path": "default.csv",
+            "ignore_head": false,
+            "ordinal_encode_columns": [],
+            "class_column": -1,
+            "column_names": []
+        },
+        "Adult": {
+            "sample_size": 500,
+            "file_path": "../data/census/adult.data",
+            "class_column": 14,
+            "column_names": [
+                "age",
+                "workclass",
+                "fnlwgt",
+                "education",
+                "education-num",
+                "marital-status",
+                "occupation",
+                "relationship",
+                "race",
+                "sex",
+                "capital-gain",
+                "capital-loss",
+                "hours-per-week",
+                "native-country",
+                "Class"
+            ]
+        },
+        "Breast Cancer": {
+            "file_path": "../data/breast_cancer/breast-cancer-wisconsin.data",
+            "class_column": 10,
+            "column_names": [
+                "Sample code number",
+                "Clump Thickness",
+                "Uniformity of Cell Size",
+                "Uniformity of Cell Shape",
+                "Marginal Adhesion",
+                "Single Epithelial Cell Size",
+                "Bare Nuclei",
+                "Bland Chromatin",
+                "Normal Nucleoli",
+                "Mitoses",
+                "Class"
+            ]
+        },
+        "Bitcoin Heist": {
+            "sample_size": 1000,
+            "file_path": "../data/bitcoin_heist/BitcoinHeistData.csv",
+            "ignore_head": true,
+            "ordinal_encode_columns": [
+                "address"
+            ],
+            "class_column": 9,
+            "column_names": [
+                "address",
+                "year",
+                "day",
+                "length",
+                "weight",
+                "count",
+                "looped",
+                "neighbors",
+                "income",
+                "Class"
+            ]
+        }
     }
-]
-
+}
