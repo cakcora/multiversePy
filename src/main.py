@@ -208,7 +208,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 
 	entropy_df = pd.DataFrame(entropy_list, columns=['Major', 'Entropy'])
 	entropy_df.set_index('Major', inplace=True)
-	entropy_df.to_csv(f'{config["out_csv_dir"]}entropy_{config["name"]}.csv')
+	entropy_df.to_csv(f'{config["out_csv_dir"]}{config["name"]}.csv')
 
 	plot(entropy_df, matrix, first_matrix)
 
@@ -225,13 +225,13 @@ def plot(df_entropy, matrix, first_matrix):
 	ax[0] = sns.regplot(x=df_entropy.index, y=df_entropy['Entropy'], ax=ax[0])
 	ax[0].set(title="Conf Matrix Entropy", xlabel="Major", ylabel="Entropy")
 
-	ax[1] = sns.heatmap(matrix, annot=True, annot_kws={'size': 10},
-						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[1])  # show last matrix
-	ax[1].set(title="Final Confusion Matrix for Data Set " + config['name'])
-
-	ax[2] = sns.heatmap(first_matrix, annot=True, annot_kws={'size': 10},
+	ax[1] = sns.heatmap(first_matrix, annot=True, annot_kws={'size': 10},
 						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[2])  # show first matrix
-	ax[2].set(title="First Confusion Matrix for Data Set " + config['name'])
+	ax[1].set(title="First Confusion Matrix for Data Set " + config['name'])
+
+	ax[2] = sns.heatmap(matrix, annot=True, annot_kws={'size': 10},
+						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[1])  # show last matrix
+	ax[2].set(title="Final Confusion Matrix for Data Set " + config['name'])
 
 	plt.show()
 
@@ -251,6 +251,27 @@ def plot_matrix(matrix, major, path=None):
 
 		plt.savefig(path + f'conf_matrix_{config["name"]}_{major}.png')
 		plt.close()  # garbage collect the figure
+
+
+def entropy_plot(configs):
+	"""
+	make plot to compare entropy between datasets
+	:paramgi configs:     list of dataset configurations
+	"""
+	sns.set(rc={'figure.figsize': (20, 10)})
+	fig, ax = plt.subplots()
+
+	for c in configs:
+		df = pd.read_csv(f'{c["out_csv_dir"]}{c["name"]}.csv')
+		ax.plot(df['Major'], df['Entropy'], label=c['name'])
+
+	ax.set_title('Entropy Plot')
+	ax.set_xlabel('Major')
+	ax.set_ylabel('Entropy')
+	ax.legend()
+
+	plt.savefig(f'{c["out_csv_dir"]}Dataset Plot.png')
+	plt.close()
 
 
 def prep_data(conf):
@@ -307,13 +328,17 @@ def get_configs():
 
 
 if __name__ == '__main__':
-	# Each data set is an element in the config array.
+	# Each data set is an element in the configs list
 	# Loop through and process each.
-	for config in get_configs():
+	configs = get_configs()
+
+	for config in configs:
 		print("PROCESSING DATA SET: " + config['name'])
 		data = prep_data(config)
 		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'],
 					n_cv_folds=config['n_cv_folds'], matrix_path=f'{config["graph_dir"]}{config["name"]}/')
+
+	entropy_plot(configs)
 
 """
 ***************************************************************************************************************
@@ -330,7 +355,7 @@ TODO:
 6. crossvalidation (Steven)
 7. Class imbalance & oversampling/upsampling/downsampling (smote)
 	8. Cap / autogenerate major_max
-9. Entropy vs major graph for all datasets
+	9. Entropy vs major graph for all datasets
 
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)
