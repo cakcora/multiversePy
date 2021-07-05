@@ -170,7 +170,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 			print(f'\tValidation accuracy:{cv_results["test_score"].mean():10.5f}')
 
 			test_accuracies = []
-			for trained_rf in cv_results['estimator']:
+			for trained_rf in cv_results['estimator']:  # just append best
 				# test on unseen data -> https://scikit-learn.org/stable/modules/cross_validation.html
 				first_y_pred = trained_rf.predict(first_x_test)
 				test_accuracies.append(accuracy_score(first_y_test, first_y_pred))
@@ -347,19 +347,39 @@ if __name__ == '__main__':
 ***************************************************************************************************************
 
 TODO:
-1. Mess around with 20x20 conf matrix
-2. Check sci kit library for cross validation and random forest 
-	3. Add global configs
-4. AUC & log loss & bias
-5. Scaling presentation and auto UCI data downloading, 
-6. crossvalidation (Steven)
-7. Class imbalance & oversampling/upsampling/downsampling (smote)
-	8. Cap / autogenerate major_max
-	9. Entropy vs major graph for all datasets
+1. Check sci kit library for cross validation and random forest -> GridSearchCV
+2. Record test accuracies in a file
+3. Combine csv files, remove spaces from name
+4. UCI data downloading 
+5. Scale features if too big
+
+Presentations:
+1. AUC, log loss, bias, precision, recall: Simon
+2. Class imbalance & oversampling/upsampling/downsampling (smote): Jon
 
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)
 
+
+-----GridSearchCV Code from Mary------
+
+# RandomForest hyperparameters tuning
+ max_features = ['auto', 'sqrt']
+ n_estimators = [int(a) for a in np.linspace(start=10, stop=100, num=10)]
+ max_depth = [int(b) for b in np.linspace(start=2, stop=10, num=5)]
+ min_samples_split = [2, 5, 10]
+ min_samples_leaf = [1, 2, 4]
+ bootstrap = [True, False]
+ Param_Grid = dict(max_features=max_features, n_estimators=n_estimators, max_depth=max_depth,
+                   min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap)
+
+ RFC = RandomForestClassifier()
+ grid = GridSearchCV(estimator=RFC, param_grid=Param_Grid, cv=2, n_jobs=1)
+ grid.fit(Train_features, Train_labels)
+ param_choose = grid.best_params_
+
+ RFC_pred = RandomForestClassifier(**param_choose, random_state=1).fit(Train_features, Train_labels)
+ Test_pred = RFC_pred.predict(Test_features)
 ========================================================================================================================
 
 DATASETS:
