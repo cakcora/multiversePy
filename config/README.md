@@ -8,7 +8,8 @@ These configs apply to all datasets.
 * minor_max - Additional poisoning on second level rf
 * n_cv_folds - Number of folds for cross validation of inner loop
 * n_estimators - Number of estimators used in random forest model
-* test_fraction - [0, 100] Percentage of dataset used for test data 
+* param_grid - Parameters for [hyperparameter](https://scikit-learn.org/stable/modules/ensemble.html#random-forest-parameters) optimization of random forests
+* test_fraction - \[0, 100\] Percentage of dataset used for test data 
 * out_csv_dir - Folder for output csv files
 * graph_dir - Folder for saved output graphs
 

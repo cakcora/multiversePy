@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score
-from sklearn.model_selection import train_test_split, cross_validate
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn import preprocessing
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -121,7 +121,7 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, matrix_path=None):
+def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, matrix_path=None, param_grid={}):
 	"""
 	:param prepped_data:    encoded dataframe to train and test forests
 	:param major_max:       number of major axis iterations
@@ -129,8 +129,8 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 	:param n_est:           n_estimators to use for random forest classifiers
 	:param n_cv_folds:      number of folds for stratified k fold cross-validator
 	:param matrix_path      path to folder for saving matrices (if None, does not save)
+	:param param_grid       parameters for hyperparameter optimization
 	"""
-
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
 
 	# first test-train split
@@ -159,28 +159,22 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 			print("\nmajor:", major, " minor:", minor)
 			data_poisoned_min = poison(data_poisoned_maj, minor, True)
 
-			cv_results = cross_validate(
-				RandomForestClassifier(n_estimators=n_est, random_state=42),
-				data_poisoned_min.drop('Class', axis=1),  # train w/ poisoned
-				data_poisoned_min['Class'],
-				cv=n_cv_folds,  # num folds for default (StratifiedKFold)
-				return_estimator=True
+			# param_grid = {}  # speed up for debugging by not optimizing
+			grid = GridSearchCV(
+				estimator=RandomForestClassifier(n_estimators=n_est),
+				param_grid=param_grid,
+				cv=n_cv_folds,
+				n_jobs=1
 			)
+			grid.fit(data_poisoned_min.drop('Class', axis=1), data_poisoned_min['Class'])
 
-			print(f'\tValidation accuracy:{cv_results["test_score"].mean():10.5f}')
+			print(f'\tOptimized parameters = {grid.best_params_}')
+			print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
+			print(f'\tTest accuracy:{accuracy_score(first_y_test, grid.best_estimator_.predict(first_x_test)):16.5f}')
 
-			test_accuracies = []
-			for trained_rf in cv_results['estimator']:  # just append best
-				# test on unseen data -> https://scikit-learn.org/stable/modules/cross_validation.html
-				first_y_pred = trained_rf.predict(first_x_test)
-				test_accuracies.append(accuracy_score(first_y_test, first_y_pred))
-
-				# record estimators for second level
-				result = mineTrees(trained_rf)
-				result['minor'] = minor
-				df = df.append(result)
-
-			print(f'\tTest accuracy:{np.array(test_accuracies).mean():16.5f}')
+			result = mineTrees(grid.best_estimator_)
+			result['minor'] = minor
+			df = df.append(result)
 
 		y = df['minor']
 		x = df.drop('minor', axis=1)
@@ -256,7 +250,7 @@ def plot_matrix(matrix, major, path=None):
 def entropy_plot(configs):
 	"""
 	make plot to compare entropy between datasets
-	:paramgi configs:     list of dataset configurations
+	:param configs:     list of dataset configurations
 	"""
 	sns.set(rc={'figure.figsize': (20, 10)})
 	fig, ax = plt.subplots()
@@ -323,8 +317,7 @@ def get_configs():
 	default = datasets['default']  # default configs for datasets
 
 	# config dictionaries for each dataset: conf comes after default so it will replace duplicate keys
-	configs = [{'name': name, **global_conf, **default, **conf} for name, conf in datasets.items() if name != 'default']
-	return configs
+	return [{'name': name, **global_conf, **default, **conf} for name, conf in datasets.items() if name != 'default']
 
 
 if __name__ == '__main__':
@@ -336,7 +329,8 @@ if __name__ == '__main__':
 		print("PROCESSING DATA SET: " + config['name'])
 		data = prep_data(config)
 		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'],
-					n_cv_folds=config['n_cv_folds'], matrix_path=f'{config["graph_dir"]}{config["name"]}/')
+					n_cv_folds=config['n_cv_folds'], matrix_path=f'{config["graph_dir"]}{config["name"]}/',
+					param_grid=config['param_grid'])
 
 	entropy_plot(configs)
 
@@ -347,7 +341,7 @@ if __name__ == '__main__':
 ***************************************************************************************************************
 
 TODO:
-1. Check sci kit library for cross validation and random forest -> GridSearchCV
+	1. Check sci kit library for cross validation and random forest -> GridSearchCV
 2. Record test accuracies in a file
 3. Combine csv files, remove spaces from name
 4. UCI data downloading 
