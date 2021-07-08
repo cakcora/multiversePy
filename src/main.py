@@ -88,13 +88,11 @@ def mineTrees(rf_model):
 
 def poison(target_data, percentage, message=False):
 	"""
-	poison a percentage of a dataframe (target_data) and return a new dataframe
-
-	:param target_data:     dataframe to poison
+	poison a percentage of a series (target_data) and return a new dataframe
+	:param target_data:     series to poison
 	:param percentage:      percentage of dataframe to poison
 	:param message:         print a status message
-
-	:return:                poisoned dataframe
+	:return:                poisoned series
 	"""
 	poisoned_data = target_data.copy()  # avoid poisoning original data
 
@@ -104,19 +102,17 @@ def poison(target_data, percentage, message=False):
 
 		if message:
 			print(f'out of {length} rows, labels of {num_to_poison} will be flipped')
-		unique_vals = poisoned_data.Class.unique()
+		unique_vals = poisoned_data.unique()
 
 		if len(unique_vals) <= 1:
 			print("ERROR: Dataset contains a single label for the Class feature")
 		else:
 			# don't poison from the beginning. pick i randomly and make sure you don't take same i two times
 			for i in np.random.choice(poisoned_data.index.array, num_to_poison, replace=False):  # random indices
-				new_label = poisoned_data.Class[i]
-
-				while new_label == poisoned_data.Class[i]:
+				new_label = poisoned_data.loc[i]
+				while new_label == poisoned_data.loc[i]:
 					new_label = np.random.choice(unique_vals)
-
-				poisoned_data.at[i, 'Class'] = new_label  # fixes SettingWithCopyWarning
+				poisoned_data.at[i] = new_label  # fixes SettingWithCopyWarning
 
 	return poisoned_data
 
@@ -132,11 +128,12 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 	:param param_grid       parameters for hyperparameter optimization
 	"""
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
+	accuracy_list = []  # tuples: (major, minor, validation accuracy, test accuracy)
 
 	# first test-train split
 	y = prepped_data['Class']
 	try:
-		train, first_x_test, train['Class'], first_y_test = train_test_split(  # this recombines train for poisoning
+		min_train_x, min_x_test, min_train_y, min_y_test = train_test_split(
 			prepped_data.drop(columns=['Class']),
 			y,
 			random_state=1,
@@ -144,7 +141,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 		)
 	except ValueError as e:
 		warnings.warn(str(e), UserWarning)
-		train, first_x_test, train['Class'], first_y_test = train_test_split(  # workaround for BTC Heist
+		min_train_x, min_x_test, min_train_y, min_y_test = train_test_split(  # workaround for BTC Heist
 			prepped_data.drop(columns=['Class']),
 			y,
 			random_state=1,
@@ -152,12 +149,12 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 		)
 
 	for major in range(0, major_max):
-		data_poisoned_maj = poison(train, major)
+		maj_poison_y = poison(min_train_y, major)
 		df = pd.DataFrame()
 
 		for minor in range(0, minor_max):
 			print("\nmajor:", major, " minor:", minor)
-			data_poisoned_min = poison(data_poisoned_maj, minor, True)
+			min_poison_y = poison(maj_poison_y, minor, True)
 
 			# param_grid = {}  # speed up for debugging by not optimizing
 			grid = GridSearchCV(
@@ -166,11 +163,14 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 				cv=n_cv_folds,
 				n_jobs=1
 			)
-			grid.fit(data_poisoned_min.drop('Class', axis=1), data_poisoned_min['Class'])
+			grid.fit(min_train_x, min_poison_y)
+
+			minor_test_accuracy = accuracy_score(min_y_test, grid.best_estimator_.predict(min_x_test))
+			accuracy_list.append((major, minor, grid.best_score_, minor_test_accuracy))
 
 			print(f'\tOptimized parameters = {grid.best_params_}')
 			print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
-			print(f'\tTest accuracy:{accuracy_score(first_y_test, grid.best_estimator_.predict(first_x_test)):16.5f}')
+			print(f'\tTest accuracy:{minor_test_accuracy:16.5f}')
 
 			result = mineTrees(grid.best_estimator_)
 			result['minor'] = minor
@@ -202,7 +202,10 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 
 	entropy_df = pd.DataFrame(entropy_list, columns=['Major', 'Entropy'])
 	entropy_df.set_index('Major', inplace=True)
-	entropy_df.to_csv(f'{config["out_csv_dir"]}{config["name"]}.csv')
+	entropy_df.to_csv(f'{config["out_csv_dir"]}{config["filename"]}_entropy.csv')
+
+	accuracy_df = pd.DataFrame(accuracy_list, columns=['Major', 'Minor', 'Validation', 'Test'])
+	accuracy_df.to_csv(f'{config["out_csv_dir"]}{config["filename"]}_accuracy.csv')
 
 	plot(entropy_df, matrix, first_matrix)
 
@@ -243,7 +246,7 @@ def plot_matrix(matrix, major, path=None):
 		ax = sns.heatmap(matrix, annot=True, annot_kws={'size': 10}, cmap=plt.cm.Greens, linewidths=0.2)
 		ax.set(title=f'Confusion Matrix: {config["name"]}, major={major}')
 
-		plt.savefig(path + f'conf_matrix_{config["name"]}_{major}.png')
+		plt.savefig(path + f'conf_matrix_{config["filename"]}_{major}.png')
 		plt.close()  # garbage collect the figure
 
 
@@ -256,7 +259,7 @@ def entropy_plot(configs):
 	fig, ax = plt.subplots()
 
 	for c in configs:
-		df = pd.read_csv(f'{c["out_csv_dir"]}{c["name"]}.csv')
+		df = pd.read_csv(f'{c["out_csv_dir"]}{c["filename"]}_entropy.csv')
 		ax.plot(df['Major'], df['Entropy'], label=c['name'])
 
 	ax.set_title('Entropy Plot')
@@ -264,7 +267,7 @@ def entropy_plot(configs):
 	ax.set_ylabel('Entropy')
 	ax.legend()
 
-	plt.savefig(f'{c["out_csv_dir"]}Dataset Plot.png')
+	plt.savefig(f'{c["out_csv_dir"]}dataset_plot.png')
 	plt.close()
 
 
@@ -279,7 +282,7 @@ def prep_data(conf):
 	else:
 		skip_row = 0
 
-	raw = pd.read_csv(conf['file_path'], names=conf['column_names'], skiprows=skip_row, header=None)
+	raw = pd.read_csv(conf['data_path'], names=conf['column_names'], skiprows=skip_row, header=None)
 
 	# If the sample size is set to 0, just use the entire data set
 	# Otherwise, draw sample
@@ -314,10 +317,15 @@ def get_configs():
 
 	global_conf = config_full['global']
 	datasets = config_full['dataset']
-	default = datasets['default']  # default configs for datasets
+	default = config_full['default']  # default configs for datasets
 
 	# config dictionaries for each dataset: conf comes after default so it will replace duplicate keys
-	return [{'name': name, **global_conf, **default, **conf} for name, conf in datasets.items() if name != 'default']
+	configs = [{'name': name, **global_conf, **default, **conf} for name, conf in datasets.items()]
+
+	for c in configs:  # make a clean filename for each dataset
+		c['filename'] = c['name'].replace(' ', '_').lower()
+
+	return configs
 
 
 if __name__ == '__main__':
@@ -329,7 +337,7 @@ if __name__ == '__main__':
 		print("PROCESSING DATA SET: " + config['name'])
 		data = prep_data(config)
 		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'],
-					n_cv_folds=config['n_cv_folds'], matrix_path=f'{config["graph_dir"]}{config["name"]}/',
+					n_cv_folds=config['n_cv_folds'], matrix_path=f'{config["graph_dir"]}{config["filename"]}/',
 					param_grid=config['param_grid'])
 
 	entropy_plot(configs)
@@ -342,10 +350,11 @@ if __name__ == '__main__':
 
 TODO:
 	1. Check sci kit library for cross validation and random forest -> GridSearchCV
-2. Record test accuracies in a file
+	2. Record test accuracies in a file
 3. Combine csv files, remove spaces from name
 4. UCI data downloading 
 5. Scale features if too big
+6. Add large datasets https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
 
 Presentations:
 1. AUC, log loss, bias, precision, recall: Simon

@@ -18,7 +18,7 @@ These configs apply to all datasets.
 Specify settings for each dataset. There are default options that can be overridden by defining them for the individual dataset.
 
 * sample_size - Set to 0 to simply take entire dataset, otherwise set to sample size
-* file_path - The actual dataset
+* data_path - The actual dataset
 * ignore_head - If the dataset contains labels as the first row, set to true
 * ordinal_encode_columns - Array of column names to encode ordinal (not one-hot)
 * class_column - Column number of the data set labels
