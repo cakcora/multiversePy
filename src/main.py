@@ -117,15 +117,17 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, matrix_path=None, param_grid={}):
+def conf_matrix(prepped_data, config):
 	"""
-	:param prepped_data:    encoded dataframe to train and test forests
-	:param major_max:       number of major axis iterations
-	:param minor_max:       number of minor axis iterations
-	:param n_est:           n_estimators to use for random forest classifiers
-	:param n_cv_folds:      number of folds for stratified k fold cross-validator
-	:param matrix_path      path to folder for saving matrices (if None, does not save)
-	:param param_grid       parameters for hyperparameter optimization
+	:param prepped_data:        encoded dataframe to train and test forests
+	:param config:              configuration dictionary
+	used configurations:
+		major_max:              number of major axis iterations
+		minor_max:              number of minor axis iterations
+		n_estimators:           number of estimators to use for random forest classifiers
+		n_cv_folds:             number of folds for stratified k fold cross-validator
+		matrix_path             path to folder for saving matrices (if None, does not save)
+		param_grid              parameters for hyperparameter optimization
 	"""
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
 	accuracy_list = []  # tuples: (major, minor, validation accuracy, test accuracy)
@@ -148,19 +150,19 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 			stratify=None  # do not stratify
 		)
 
-	for major in range(0, major_max):
+	for major in range(0, config['major_max']):
 		maj_poison_y = poison(min_train_y, major)
 		df = pd.DataFrame()
 
-		for minor in range(0, minor_max):
+		for minor in range(0, config['minor_max']):
 			print("\nmajor:", major, " minor:", minor)
 			min_poison_y = poison(maj_poison_y, minor, True)
 
-			# param_grid = {}  # speed up for debugging by not optimizing
+			# config['param_grid'] = {}  # speed up for debugging by not optimizing
 			grid = GridSearchCV(
-				estimator=RandomForestClassifier(n_estimators=n_est),
-				param_grid=param_grid,
-				cv=n_cv_folds,
+				estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
+				param_grid=config['param_grid'],
+				cv=config['n_cv_folds'],
 				n_jobs=1
 			)
 			grid.fit(min_train_x, min_poison_y)
@@ -182,7 +184,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 		# Second test-train split
 		x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1, stratify=y)
 
-		rf_second_level = RandomForestClassifier(n_estimators=n_est)
+		rf_second_level = RandomForestClassifier(n_estimators=config['n_estimators'])
 		rf_second_level.fit(x_train, y_train)
 
 		y_pred_test = rf_second_level.predict(x_test)  # test second level model
@@ -191,7 +193,7 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 		# throwing errors. This seems to be corrected now?
 		# matrix = confusion_matrix(test_data.minor, y_pred_test)
 		matrix = confusion_matrix(y_test, y_pred_test)
-		plot_matrix(matrix, major, path=matrix_path)  # plot if path specified
+		plot_matrix(matrix, major, config)  # plot if path specified
 		print(matrix)
 
 		entropy = scipy.stats.entropy(matrix.flatten())
@@ -207,14 +209,16 @@ def conf_matrix(prepped_data, major_max, minor_max, n_est=100, n_cv_folds=5, mat
 	accuracy_df = pd.DataFrame(accuracy_list, columns=['Major', 'Minor', 'Validation', 'Test'])
 	accuracy_df.to_csv(f'{config["out_csv_dir"]}{config["filename"]}_accuracy.csv')
 
-	plot(entropy_df, matrix, first_matrix)
+	plot(entropy_df, matrix, first_matrix, config)
 
 
-def plot(df_entropy, matrix, first_matrix):
+def plot(df_entropy, matrix, first_matrix, config):
 	"""
 	Plots the recorded entropy values and the final confusion matrix.
 	:param df_entropy:      Entropy dataframe. Should contain index col of Major values, 'Entropy' column of entropy values.
-	:param matrix:          Confusion matrix to plot
+	:param matrix:          Last confusion matrix
+	:param first_matrix     First confusion matrix
+	:param config           Configuration dictionary
 	"""
 	sns.set(rc={'figure.figsize': (20, 10)})
 	fig, ax = plt.subplots(1, 3)  # For 1 x 3 figures in plot
@@ -233,20 +237,20 @@ def plot(df_entropy, matrix, first_matrix):
 	plt.show()
 
 
-def plot_matrix(matrix, major, path=None):
+def plot_matrix(matrix, major, config):
 	"""
 	plot and save confusion matrix
 	:param matrix:      confusion matrix to plot
 	:param major:       current major axis
-	:param path:        path to folder for saving figure
+	:param config:      configuration dictionary
 	"""
-	if path is not None:
+	if config.get('matrix_path') is not None:
 		sns.set(rc={'figure.figsize': (7, 7)})
 
 		ax = sns.heatmap(matrix, annot=True, annot_kws={'size': 10}, cmap=plt.cm.Greens, linewidths=0.2)
 		ax.set(title=f'Confusion Matrix: {config["name"]}, major={major}')
 
-		plt.savefig(path + f'conf_matrix_{config["filename"]}_{major}.png')
+		plt.savefig(config['matrix_path'] + f'conf_matrix_{config["filename"]}_{major}.png')
 		plt.close()  # garbage collect the figure
 
 
@@ -322,13 +326,14 @@ def get_configs():
 	# config dictionaries for each dataset: conf comes after default so it will replace duplicate keys
 	configs = [{'name': name, **global_conf, **default, **conf} for name, conf in datasets.items()]
 
-	for c in configs:  # make a clean filename for each dataset
-		c['filename'] = c['name'].replace(' ', '_').lower()
+	for c in configs:
+		c['filename'] = c['name'].replace(' ', '_').lower()  # clean filename
+		c['matrix_path'] = f'{c["graph_dir"]}{c["filename"]}/'
 
 	return configs
 
 
-if __name__ == '__main__':
+def main():
 	# Each data set is an element in the configs list
 	# Loop through and process each.
 	configs = get_configs()
@@ -336,11 +341,13 @@ if __name__ == '__main__':
 	for config in configs:
 		print("PROCESSING DATA SET: " + config['name'])
 		data = prep_data(config)
-		conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'],
-					n_cv_folds=config['n_cv_folds'], matrix_path=f'{config["graph_dir"]}{config["filename"]}/',
-					param_grid=config['param_grid'])
+		conf_matrix(data, config)
 
 	entropy_plot(configs)
+
+
+if __name__ == '__main__':
+	main()
 
 """
 ***************************************************************************************************************

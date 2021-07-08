@@ -27,7 +27,7 @@
     "dataset": {
         "Adult": {
             "sample_size": 1000,
-            "file_path": "../data/census/adult.data",
+            "data_path": "../data/census/adult.data",
             "class_column": 14,
             "column_names": [
                 "age",
@@ -48,7 +48,7 @@
             ]
         },
         "Breast Cancer": {
-            "file_path": "../data/breast_cancer/breast-cancer-wisconsin.data",
+            "data_path": "../data/breast_cancer/breast-cancer-wisconsin.data",
             "class_column": 10,
             "column_names": [
                 "Sample code number",
@@ -66,7 +66,7 @@
         },
         "Bitcoin Heist": {
             "sample_size": 1000,
-            "file_path": "../data/bitcoin_heist/BitcoinHeistData.csv",
+            "data_path": "../data/bitcoin_heist/BitcoinHeistData.csv",
             "ignore_head": true,
             "ordinal_encode_columns": [
                 "address"
