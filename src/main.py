@@ -202,14 +202,18 @@ def conf_matrix(prepped_data, config):
 		if major == 0:
 			first_matrix = matrix
 
-	entropy_df = pd.DataFrame(entropy_list, columns=['Major', 'Entropy'])
-	entropy_df.set_index('Major', inplace=True)
-	entropy_df.to_csv(f'{config["out_csv_dir"]}{config["filename"]}_entropy.csv')
+	curr_entropy_df = pd.DataFrame(entropy_list, columns=['major', f'{config["filename"]}_entropy']).set_index('major')
+	plot(curr_entropy_df, matrix, first_matrix, config)
 
-	accuracy_df = pd.DataFrame(accuracy_list, columns=['Major', 'Minor', 'Validation', 'Test'])
-	accuracy_df.to_csv(f'{config["out_csv_dir"]}{config["filename"]}_accuracy.csv')
+	if 'entropy_df' not in globals():
+		global entropy_df
+		entropy_df = curr_entropy_df  # assign new global entropy df
+	else:
+		entropy_df = pd.concat([entropy_df, curr_entropy_df], axis=1)  # expand global entropy df
+	entropy_df.to_csv(f'{config["out_csv_dir"]}entropy.csv')  # save entropy data up to this point
 
-	plot(entropy_df, matrix, first_matrix, config)
+	accuracy_df = pd.DataFrame(accuracy_list, columns=['major', 'minor', 'validation', 'test'])
+	accuracy_df.to_csv(f'{config["out_csv_dir"]}/accuracies/{config["filename"]}_accuracy.csv')
 
 
 def plot(df_entropy, matrix, first_matrix, config):
@@ -223,18 +227,19 @@ def plot(df_entropy, matrix, first_matrix, config):
 	sns.set(rc={'figure.figsize': (20, 10)})
 	fig, ax = plt.subplots(1, 3)  # For 1 x 3 figures in plot
 
-	ax[0] = sns.regplot(x=df_entropy.index, y=df_entropy['Entropy'], ax=ax[0])
+	ax[0] = sns.regplot(x=df_entropy.index, y=df_entropy[f'{config["filename"]}_entropy'], ax=ax[0])
 	ax[0].set(title="Conf Matrix Entropy", xlabel="Major", ylabel="Entropy")
 
 	ax[1] = sns.heatmap(first_matrix, annot=True, annot_kws={'size': 10},
-						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[2])  # show first matrix
+						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[1])  # show first matrix
 	ax[1].set(title="First Confusion Matrix for Data Set " + config['name'])
 
 	ax[2] = sns.heatmap(matrix, annot=True, annot_kws={'size': 10},
-						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[1])  # show last matrix
+						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[2])  # show last matrix
 	ax[2].set(title="Final Confusion Matrix for Data Set " + config['name'])
 
-	plt.show()
+	plt.savefig(f'{config["out_csv_dir"]}{config["filename"]}.png')
+	plt.close()
 
 
 def plot_matrix(matrix, major, config):
@@ -263,15 +268,14 @@ def entropy_plot(configs):
 	fig, ax = plt.subplots()
 
 	for c in configs:
-		df = pd.read_csv(f'{c["out_csv_dir"]}{c["filename"]}_entropy.csv')
-		ax.plot(df['Major'], df['Entropy'], label=c['name'])
+		ax.plot(entropy_df.index, entropy_df[f'{c["filename"]}_entropy'], label=c['name'])  # index is major
 
-	ax.set_title('Entropy Plot')
+	ax.set_title('Entropy Comparison')
 	ax.set_xlabel('Major')
 	ax.set_ylabel('Entropy')
 	ax.legend()
 
-	plt.savefig(f'{c["out_csv_dir"]}dataset_plot.png')
+	plt.savefig(f'{configs[0]["out_csv_dir"]}entropy_comparison.png')
 	plt.close()
 
 
@@ -358,7 +362,7 @@ if __name__ == '__main__':
 TODO:
 	1. Check sci kit library for cross validation and random forest -> GridSearchCV
 	2. Record test accuracies in a file
-3. Combine csv files, remove spaces from name
+	3. Combine csv files, remove spaces from name
 4. UCI data downloading 
 5. Scale features if too big
 6. Add large datasets https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
