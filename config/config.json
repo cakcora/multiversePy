@@ -21,69 +21,21 @@
         "data_path": "default.csv",
         "ignore_head": false,
         "ordinal_encode_columns": [],
-        "class_column": -1,
-        "column_names": []
+        "class_column": -1
     },
     "dataset": {
         "Adult": {
             "sample_size": 1000,
-            "data_path": "../data/census/adult.data",
-            "class_column": 14,
-            "column_names": [
-                "age",
-                "workclass",
-                "fnlwgt",
-                "education",
-                "education-num",
-                "marital-status",
-                "occupation",
-                "relationship",
-                "race",
-                "sex",
-                "capital-gain",
-                "capital-loss",
-                "hours-per-week",
-                "native-country",
-                "Class"
-            ]
+            "data_path": "../data/census/adult.data"
         },
         "Breast Cancer": {
-            "data_path": "../data/breast_cancer/breast-cancer-wisconsin.data",
-            "class_column": 10,
-            "column_names": [
-                "Sample code number",
-                "Clump Thickness",
-                "Uniformity of Cell Size",
-                "Uniformity of Cell Shape",
-                "Marginal Adhesion",
-                "Single Epithelial Cell Size",
-                "Bare Nuclei",
-                "Bland Chromatin",
-                "Normal Nucleoli",
-                "Mitoses",
-                "Class"
-            ]
+            "data_path": "../data/breast_cancer/breast-cancer-wisconsin.data"
         },
         "Bitcoin Heist": {
             "sample_size": 1000,
             "data_path": "../data/bitcoin_heist/BitcoinHeistData.csv",
             "ignore_head": true,
-            "ordinal_encode_columns": [
-                "address"
-            ],
-            "class_column": 9,
-            "column_names": [
-                "address",
-                "year",
-                "day",
-                "length",
-                "weight",
-                "count",
-                "looped",
-                "neighbors",
-                "income",
-                "Class"
-            ]
+            "ordinal_encode_columns": [0]
         }
     }
 }

@@ -285,12 +285,12 @@ def prep_data(conf):
 	:param conf:        dictionary of configurations
 	:return:            dataframe where x is one-hot encoded and class is categorically encoded
 	"""
-	if conf['ignore_head']:
-		skip_row = 1
-	else:
-		skip_row = 0
+	skip_row = 1 if conf['ignore_head'] else 0  # skip if first row is not data
+	raw = pd.read_csv(conf['data_path'], skiprows=skip_row, header=None)
 
-	raw = pd.read_csv(conf['data_path'], names=conf['column_names'], skiprows=skip_row, header=None)
+	# if class column is set to -1, use last column
+	class_col = conf['class_column'] if conf['class_column'] != -1 else len(raw.columns) - 1
+	raw.rename(columns={class_col: 'Class'}, inplace=True)
 
 	# If the sample size is set to 0, just use the entire data set
 	# Otherwise, draw sample
@@ -365,7 +365,16 @@ TODO:
 	3. Combine csv files, remove spaces from name
 4. UCI data downloading 
 5. Scale features if too big
-6. Add large datasets https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
+
+TODOS from 7/8/2021 email:
+6. Create configs for datasets (start with Huseyin's 18 datasets) https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
+	7. Run two level RF analysis on the datasets
+	8. Record entropy for major poisoning levels
+9. Record performance (AUC, Bias, LogLoss) of the first level RF trained on test data
+10. Use the fewest neurons and the fewest neural network layers to reach RF performance (or use the same number of neurons and layers for all datasets and compare performance results?)
+11. Based on RF breaking point and NN simplicity, explain data in global terms (global explanations) or in terms of salient data points (local explanations). Both are open research problems.
+12. Global explanations can be managed by using functional data depth on entropy lines? Reporting breaking points in performance wrt. the poisoning rate?
+13. Local explanations (which data points' removal cause the biggest drop in datasets)
 
 Presentations:
 1. AUC, log loss, bias, precision, recall: Simon
@@ -374,33 +383,13 @@ Presentations:
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)
 
-
------GridSearchCV Code from Mary------
-
-# RandomForest hyperparameters tuning
- max_features = ['auto', 'sqrt']
- n_estimators = [int(a) for a in np.linspace(start=10, stop=100, num=10)]
- max_depth = [int(b) for b in np.linspace(start=2, stop=10, num=5)]
- min_samples_split = [2, 5, 10]
- min_samples_leaf = [1, 2, 4]
- bootstrap = [True, False]
- Param_Grid = dict(max_features=max_features, n_estimators=n_estimators, max_depth=max_depth,
-                   min_samples_leaf=min_samples_leaf, min_samples_split=min_samples_split, bootstrap=bootstrap)
-
- RFC = RandomForestClassifier()
- grid = GridSearchCV(estimator=RFC, param_grid=Param_Grid, cv=2, n_jobs=1)
- grid.fit(Train_features, Train_labels)
- param_choose = grid.best_params_
-
- RFC_pred = RandomForestClassifier(**param_choose, random_state=1).fit(Train_features, Train_labels)
- Test_pred = RFC_pred.predict(Test_features)
 ========================================================================================================================
 
 DATASETS:
 adult:		https://archive.ics.uci.edu/ml/datasets/Adult
 bc:			https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
 btc heist:	https://archive.ics.uci.edu/ml/datasets/BitcoinHeistRansomwareAddressDataset
-
+Huseyin's:  https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
 ========================================================================================================================
 
 ISSUES:
