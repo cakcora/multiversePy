@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import scipy.stats
 import json
 import warnings
+import os
 # from sklearn.tree import export_graphviz  # used in comment
 
 
@@ -158,6 +159,7 @@ def conf_matrix(prepped_data, config):
 			print("\nmajor:", major, " minor:", minor)
 			min_poison_y = poison(maj_poison_y, minor, True)
 
+			# TODO: pick better hyperparameters
 			# config['param_grid'] = {}  # speed up for debugging by not optimizing
 			grid = GridSearchCV(
 				estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
@@ -255,6 +257,9 @@ def plot_matrix(matrix, major, config):
 		ax = sns.heatmap(matrix, annot=True, annot_kws={'size': 10}, cmap=plt.cm.Greens, linewidths=0.2)
 		ax.set(title=f'Confusion Matrix: {config["name"]}, major={major}')
 
+		if not os.path.exists(config['matrix_path']):  # make folder for plots
+			os.mkdir(config['matrix_path'])
+
 		plt.savefig(config['matrix_path'] + f'conf_matrix_{config["filename"]}_{major}.png')
 		plt.close()  # garbage collect the figure
 
@@ -286,7 +291,13 @@ def prep_data(conf):
 	:return:            dataframe where x is one-hot encoded and class is categorically encoded
 	"""
 	skip_row = 1 if conf['ignore_head'] else 0  # skip if first row is not data
-	raw = pd.read_csv(conf['data_path'], skiprows=skip_row, header=None)
+	raw = pd.read_csv(conf['data_path'], skiprows=skip_row, header=None, index_col=conf['index_column'])
+
+	# TODO: is this the right way to do this?
+	# replace NaN with median
+	for col in raw.columns:  # finance and Rain in Australia datasets are full of nan
+		if np.issubdtype(raw[col].dtype, np.number):
+			raw[col] = raw[col].replace(np.NaN, raw[col].median())
 
 	# if class column is set to -1, use last column
 	class_col = conf['class_column'] if conf['class_column'] != -1 else len(raw.columns) - 1
@@ -294,11 +305,11 @@ def prep_data(conf):
 
 	# If the sample size is set to 0, just use the entire data set
 	# Otherwise, draw sample
-	if conf['sample_size'] > 0:
+	if 0 < conf['sample_size'] <= len(raw.index):  # don't draw sample larger than dataset
 		raw = raw.sample(n=conf['sample_size'])
 
 	# one-hot encoding of the raw (except for the Class variable and ignored columns)
-	encoded = pd.get_dummies(raw.drop(columns=['Class'] + conf['ordinal_encode_columns']))
+	encoded = pd.get_dummies(raw.drop(columns=['Class'] + conf['ordinal_encode_columns'] + conf['drop_columns']))
 
 	# ordinal encode and add back ignored columns (currently just BTC address)
 	for col_name in conf['ordinal_encode_columns']:
@@ -308,8 +319,8 @@ def prep_data(conf):
 	encoded['Class'] = le.fit_transform(raw['Class'])
 
 	# reset major_max in config if specified
-	if conf['major_max'] is None or conf['major_max'] >= (100 / len(le.classes_)):
-		conf['major_max'] = (100 // len(le.classes_)) - 1  # reset major to max possible
+	if conf['major_max'] is None or conf['major_max'] >= (100 / len(le.classes_)):  # reset major to max possible
+		conf['major_max'] = max(100 // len(le.classes_), 1)  # prevent from being less than 1
 
 	return encoded
 
@@ -371,7 +382,9 @@ TODO:
 5. Scale features if too big
 
 TODOS from 7/8/2021 email:
-6. Create configs for datasets (start with Huseyin's 18 datasets) https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
+	6. Create configs for datasets (start with Huseyin's 18 datasets) https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
+6.1. What is the class column for city temp dataset?
+6.2. Is wisconsin cancer dataset the same as breast cancer dataset?
 	7. Run two level RF analysis on the datasets
 	8. Record entropy for major poisoning levels
 9. Record performance (AUC, Bias, LogLoss) of the first level RF trained on test data

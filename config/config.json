@@ -17,61 +17,75 @@
         "graph_dir": "../results/matrix_plots/"
     },
     "default": {
-        "sample_size": 0,
+        "sample_size": 1000,
         "data_path": "default.csv",
         "ignore_head": false,
         "ordinal_encode_columns": [],
-        "class_column": -1
+        "drop_columns": [],
+        "class_column": -1,
+        "index_column": null
     },
     "dataset": {
         "Adult": {
-            "sample_size": 1000,
             "data_path": "../data/census/adult.data"
         },
         "Breast Cancer": {
             "data_path": "../data/breast_cancer/breast-cancer-wisconsin.data"
         },
         "Bitcoin Heist": {
-            "sample_size": 1000,
             "data_path": "../data/bitcoin_heist/BitcoinHeistData.csv",
             "ignore_head": true,
             "ordinal_encode_columns": [0]
         },
         "churn modelling": {
             "data_path": "../data/churn_modelling/Churn_Modelling.csv",
+            "ignore_head": true
         },
         "Bank Marketing Data Set": {
             "data_path": "../data/bank_marketing_data_set/bank-full-preprocessed.csv",
+            "ignore_head": true
         },
         "Rain in Australia": {
             "data_path": "../data/rain_in_australia/corrected_weatherAUS.csv"
         },
         "fly satisfaction": {
             "data_path": "../data/fly_satisfaction/train.csv",
+            "ignore_head": true,
+            "index_column": 0
         },
         "emails": {
             "data_path": "../data/emails/emails.csv",
+            "ignore_head": true,
+            "drop_columns": [0]
         },
         "Online Credit Card Transactions": {
             "data_path": "../data/online_credit_card_transactions/corrected_CC_FRAUD.csv",
+            "ignore_head": true,
+            "ordinal_encode_columns": [0]
         },
         "water quality": {
             "data_path": "../data/water_quality/water_potability.csv",
+            "ignore_head": true
         },
         "Financial 2014": {
             "data_path": "../data/financial/2014_Financial_Data.csv",
+            "ignore_head": true
         },
         "Financial 2015": {
             "data_path": "../data/financial/2015_Financial_Data.csv",
+            "ignore_head": true
         },
         "Financial 2016": {
             "data_path": "../data/financial/2016_Financial_Data.csv",
+            "ignore_head": true
         },
         "Financial 2017": {
             "data_path": "../data/financial/2017_Financial_Data.csv",
+            "ignore_head": true
         },
         "Financial 2018": {
             "data_path": "../data/financial/2018_Financial_Data.csv",
+            "ignore_head": true
         },
         "nursery": {
             "data_path": "../data/nursery/spec_prior-priority-nursery.data"
