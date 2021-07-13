@@ -143,5 +143,10 @@ results/entropy_plots/entropy*
 data/bitcoin_heist/*.csv
 data/bitcoin_heist/*.zip
 
-*.png
+results/entropy_plots/accuracies/*
 
+data/daily_temperature_of_major_cities/*.csv
+data/kdd_cup/*.data
+
+*.png
+*.ipynb

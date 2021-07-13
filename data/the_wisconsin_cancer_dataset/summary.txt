@@ -1,0 +1,2 @@
+There are 569 items (patients). There is an ID followed by 10 predictors variables (thickness, cell size uniformity, etc.)
+ The variable to predict is encoded as 2 (benign) or 4 (malignant)

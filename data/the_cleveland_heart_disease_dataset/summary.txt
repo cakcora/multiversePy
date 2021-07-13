@@ -1,0 +1,2 @@
+There are 303 items (patients), six have a missing value. There are 13 predictor variables (age, sex, cholesterol, etc.) 
+The variable to predict is encoded as 0 to 4 where 0 means no heart disease 	and 1-4 means presence of heart disease.
