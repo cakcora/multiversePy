@@ -355,6 +355,10 @@ if __name__ == '__main__':
 
 """
 ***************************************************************************************************************
+* Note: The kdd cup data set is >100mb, it cannot be stored on github, you will have to download it           *
+*       yourself and put the csv in data/kdd_cup/                                                             *
+* Note: The city temp data set is >100mb, it cannot be stored on github, you will have to download it         *
+*       yourself and put the csv in data/daily_temperature_of_major_cities                                    *
 * Note: The bitcoin data set is >200mb, it cannot be stored on github, you will have to download it yourself  *
 *       and put the csv in data/bitcoin_heist/BitcoinHeistData.csv                                            *
 ***************************************************************************************************************
