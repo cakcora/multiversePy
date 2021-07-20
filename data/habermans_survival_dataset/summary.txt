@@ -1,2 +1,0 @@
-There are 306 items (patients). There are three predictor variables (age, year of operation, number nodes). 
-The variable to predict is encoded as 1 (survived) or 2 (died).

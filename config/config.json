@@ -6,11 +6,8 @@
         "n_estimators": 100,
         "param_grid": {
             "criterion": ["gini", "entropy"],
-            "max_depth": [2, 4, 6, 8, 10],
-            "min_samples_split": [2, 5, 10],
-            "min_samples_leaf": [1, 2, 4],
-            "max_features": ["log2", "sqrt"],
-            "bootstrap": [true, false]
+            "min_samples_split": [0.001, 0.01, 0.02],
+            "max_features": ["log2", "sqrt"]
         },
         "test_fraction": 0.25,
         "out_csv_dir": "../results/entropy_plots/",
@@ -104,9 +101,6 @@
         },
         "spambase": {
             "data_path": "../data/spambase/spambase.data"
-        },
-        "Haberman\u2019s Survival Dataset": {
-            "data_path": "../data/habermans_survival_dataset/haberman.data"
         }
     }
 }

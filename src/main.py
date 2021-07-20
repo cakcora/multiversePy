@@ -159,7 +159,6 @@ def conf_matrix(prepped_data, config):
 			print("\nmajor:", major, " minor:", minor)
 			min_poison_y = poison(maj_poison_y, minor, True)
 
-			# TODO: pick better hyperparameters
 			# config['param_grid'] = {}  # speed up for debugging by not optimizing
 			grid = GridSearchCV(
 				estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
@@ -293,11 +292,10 @@ def prep_data(conf):
 	skip_row = 1 if conf['ignore_head'] else 0  # skip if first row is not data
 	raw = pd.read_csv(conf['data_path'], skiprows=skip_row, header=None, index_col=conf['index_column'])
 
-	# TODO: is this the right way to do this?
 	# replace NaN with median
 	for col in raw.columns:  # finance and Rain in Australia datasets are full of nan
 		if np.issubdtype(raw[col].dtype, np.number):
-			raw[col] = raw[col].replace(np.NaN, raw[col].median())
+			raw[col] = raw[col].replace(np.NaN, raw[col].mean())  # TODO: compare with median
 
 	# if class column is set to -1, use last column
 	class_col = conf['class_column'] if conf['class_column'] != -1 else len(raw.columns) - 1
@@ -308,10 +306,10 @@ def prep_data(conf):
 	if 0 < conf['sample_size'] <= len(raw.index):  # don't draw sample larger than dataset
 		raw = raw.sample(n=conf['sample_size'])
 
-	# one-hot encoding of the raw (except for the Class variable and ignored columns)
+	# one-hot encoding of the raw (except for the Class variable and ordinal-encoded/ignored columns)
 	encoded = pd.get_dummies(raw.drop(columns=['Class'] + conf['ordinal_encode_columns'] + conf['drop_columns']))
 
-	# ordinal encode and add back ignored columns (currently just BTC address)
+	# ordinal encode and add back ordinal encoded columns
 	for col_name in conf['ordinal_encode_columns']:
 		encoded[col_name] = pd.factorize(raw[col_name])[0]  # codes, not unique values
 
@@ -343,7 +341,7 @@ def get_configs():
 
 	for c in configs:
 		c['filename'] = c['name'].replace(' ', '_').lower()  # clean filename
-		c['matrix_path'] = f'{c["graph_dir"]}{c["filename"]}/'
+		c['matrix_path'] = None if c.get('graph_dir') is None else f'{c["graph_dir"]}{c["filename"]}/'  # allow no graph
 
 	return configs
 
@@ -368,8 +366,6 @@ if __name__ == '__main__':
 ***************************************************************************************************************
 * Note: The kdd cup data set is >100mb, it cannot be stored on github, you will have to download it           *
 *       yourself and put the csv in data/kdd_cup/                                                             *
-* Note: The city temp data set is >100mb, it cannot be stored on github, you will have to download it         *
-*       yourself and put the csv in data/daily_temperature_of_major_cities                                    *
 * Note: The bitcoin data set is >200mb, it cannot be stored on github, you will have to download it yourself  *
 *       and put the csv in data/bitcoin_heist/BitcoinHeistData.csv                                            *
 ***************************************************************************************************************
@@ -381,10 +377,16 @@ TODO:
 4. UCI data downloading 
 5. Scale features if too big
 
+Ignored Datasets:
+	haberman: 				too few features
+	temp of maj cities: 	regression
+	wisconsin cancer: 		duplicate
+
+Check Back on:
+	data imputation for NaN -> mean vs median vs other?
+
 TODOS from 7/8/2021 email:
 	6. Create configs for datasets (start with Huseyin's 18 datasets) https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
-6.1. What is the class column for city temp dataset?
-6.2. Is wisconsin cancer dataset the same as breast cancer dataset?
 	7. Run two level RF analysis on the datasets
 	8. Record entropy for major poisoning levels
 9. Record performance (AUC, Bias, LogLoss) of the first level RF trained on test data
