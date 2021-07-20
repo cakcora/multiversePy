@@ -371,9 +371,9 @@ if __name__ == '__main__':
 ***************************************************************************************************************
 
 TODO:
-	1. Check sci kit library for cross validation and random forest -> GridSearchCV
-	2. Record test accuracies in a file
-	3. Combine csv files, remove spaces from name
+1. Clean the datasets
+2. Save clean versions of datasets
+3. Look into Compute Canada
 4. UCI data downloading 
 5. Scale features if too big
 
