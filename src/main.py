@@ -289,13 +289,12 @@ def prep_data(conf):
 	:param conf:        dictionary of configurations
 	:return:            dataframe where x is one-hot encoded and class is categorically encoded
 	"""
-	skip_row = 1 if conf['ignore_head'] else 0  # skip if first row is not data
-	raw = pd.read_csv(conf['data_path'], skiprows=skip_row, header=None, index_col=conf['index_column'])
+	raw = pd.read_csv(conf['data_path'], header=None)
 
 	# replace NaN with median
 	for col in raw.columns:  # finance and Rain in Australia datasets are full of nan
 		if np.issubdtype(raw[col].dtype, np.number):
-			raw[col] = raw[col].replace(np.NaN, raw[col].mean())  # TODO: compare with median
+			raw[col].replace(np.NaN, raw[col].mean(), inplace=True)  # TODO: compare with median
 
 	# if class column is set to -1, use last column
 	class_col = conf['class_column'] if conf['class_column'] != -1 else len(raw.columns) - 1
@@ -307,7 +306,7 @@ def prep_data(conf):
 		raw = raw.sample(n=conf['sample_size'])
 
 	# one-hot encoding of the raw (except for the Class variable and ordinal-encoded/ignored columns)
-	encoded = pd.get_dummies(raw.drop(columns=['Class'] + conf['ordinal_encode_columns'] + conf['drop_columns']))
+	encoded = pd.get_dummies(raw.drop(columns=['Class'] + conf['ordinal_encode_columns']))
 
 	# ordinal encode and add back ordinal encoded columns
 	for col_name in conf['ordinal_encode_columns']:
@@ -341,7 +340,7 @@ def get_configs():
 
 	for c in configs:
 		c['filename'] = c['name'].replace(' ', '_').lower()  # clean filename
-		c['matrix_path'] = None if c.get('graph_dir') is None else f'{c["graph_dir"]}{c["filename"]}/'  # allow no graph
+		c['matrix_path'] = None if c.get('matrix_dir') is None else f'{c["matrix_dir"]}{c["filename"]}/'  # allow no graph
 
 	return configs
 

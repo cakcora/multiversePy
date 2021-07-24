@@ -19,8 +19,5 @@ Specify settings for each dataset. There are default options that can be overrid
 
 * sample_size - Set to 0 to simply take entire dataset, otherwise set to sample size
 * data_path - The actual dataset
-* ignore_head - If the dataset contains labels as the first row, set to true
 * ordinal_encode_columns - Array of column numbers to encode ordinal (one-hot is default)
-* drop_columns - Array of column numbers to ignore
 * class_column - Column number of the dataset labels
-* index_column - Column number to use as index
