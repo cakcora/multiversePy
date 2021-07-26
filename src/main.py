@@ -11,6 +11,7 @@ import scipy.stats
 import json
 import warnings
 import os
+import glob
 # from sklearn.tree import export_graphviz  # used in comment
 
 
@@ -203,15 +204,12 @@ def conf_matrix(prepped_data, config):
 		if major == 0:
 			first_matrix = matrix
 
-	curr_entropy_df = pd.DataFrame(entropy_list, columns=['major', f'{config["filename"]}_entropy']).set_index('major')
-	plot(curr_entropy_df, matrix, first_matrix, config)
+	entropy_df = pd.DataFrame(entropy_list, columns=['major', f'{config["filename"]}_entropy']).set_index('major')
+	plot(entropy_df, matrix, first_matrix, config)
 
-	if 'entropy_df' not in globals():
-		global entropy_df
-		entropy_df = curr_entropy_df  # assign new global entropy df
-	else:
-		entropy_df = pd.concat([entropy_df, curr_entropy_df], axis=1)  # expand global entropy df
-	entropy_df.to_csv(f'{config["out_csv_dir"]}entropy.csv')  # save entropy data up to this point
+	if not os.path.exists(config['temp_csv_dir']):
+		os.mkdir(config['temp_csv_dir'])
+	entropy_df.to_csv(f'{config["temp_csv_dir"]}{config["filename"]}.csv')
 
 	accuracy_df = pd.DataFrame(accuracy_list, columns=['major', 'minor', 'validation', 'test'])
 	accuracy_df.to_csv(f'{config["out_csv_dir"]}/accuracies/{config["filename"]}_accuracy.csv')
@@ -263,23 +261,24 @@ def plot_matrix(matrix, major, config):
 		plt.close()  # garbage collect the figure
 
 
-def entropy_plot(configs):
+def entropy_plot(config):
 	"""
 	make plot to compare entropy between datasets
-	:param configs:     list of dataset configurations
+	:param config:      configuration dictionary
 	"""
 	sns.set(rc={'figure.figsize': (20, 10)})
 	fig, ax = plt.subplots()
 
-	for c in configs:
-		ax.plot(entropy_df.index, entropy_df[f'{c["filename"]}_entropy'], label=c['name'])  # index is major
+	entropy_df = pd.read_csv(f'{config["out_csv_dir"]}entropy.csv', index_col=0)
+	for col in entropy_df.columns:
+		ax.plot(entropy_df.index, entropy_df[col], label=col)
 
 	ax.set_title('Entropy Comparison')
 	ax.set_xlabel('Major')
 	ax.set_ylabel('Entropy')
 	ax.legend()
 
-	plt.savefig(f'{configs[0]["out_csv_dir"]}entropy_comparison.png')
+	plt.savefig(f'{config["out_csv_dir"]}entropy_comparison.png')
 	plt.close()
 
 
@@ -345,6 +344,20 @@ def get_configs():
 	return configs
 
 
+def combine_entropy_data(config):
+	"""
+	combine entropy csv files
+	:param config:  configuration dictionary
+	"""
+	files = glob.glob(f'{config["temp_csv_dir"]}*.csv')  # all temp csv files
+	dataframes = [pd.read_csv(file, index_col=0) for file in files]  # dataframes for temp csv files
+	pd.concat(dataframes, axis=1).to_csv(f'{config["out_csv_dir"]}entropy.csv')
+
+	for file in files:  # clean temp files
+		os.remove(file)
+	os.rmdir(config['temp_csv_dir'])
+
+
 def main():
 	# Each data set is an element in the configs list
 	# Loop through and process each.
@@ -355,7 +368,8 @@ def main():
 		data = prep_data(config)
 		conf_matrix(data, config)
 
-	entropy_plot(configs)
+	combine_entropy_data(configs[0])
+	entropy_plot(configs[0])
 
 
 if __name__ == '__main__':
