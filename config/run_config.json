@@ -1,0 +1,39 @@
+{
+    "major_max": 20,
+    "minor_max": 20,
+    "n_cv_folds": 10,
+    "n_estimators": 100,
+    "sample_size": 1000,
+    "param_grid": {
+        "criterion": ["gini", "entropy"],
+        "min_samples_split": [0.001, 0.01, 0.02],
+        "max_features": ["log2", "sqrt"]
+    },
+    "test_fraction": 0.25,
+    "out_csv_dir": "../results/entropy_plots/",
+    "temp_csv_dir": "../results/tmp/",
+    "preprocessed_dir": "../preprocessed/",
+    "matrix_dir": null,
+    "datasets": [
+        "adult.csv",
+        "bank_marketing_data_set.csv",
+        "bitcoin_heist.csv",
+        "breast_cancer.csv",
+        "churn_modelling.csv",
+        "emails.csv",
+        "financial_2014.csv",
+        "financial_2015.csv",
+        "financial_2016.csv",
+        "financial_2017.csv",
+        "financial_2018.csv",
+        "fly_satisfaction.csv",
+        "kdd_cup.csv",
+        "nursery.csv",
+        "online_credit_card_transactions.csv",
+        "rain_in_australia.csv",
+        "spambase.csv",
+        "the_cleveland_heart_disease_dataset.csv",
+        "the_knote_authentication_dataset.csv",
+        "water_quality.csv"
+    ]
+}

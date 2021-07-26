@@ -1,6 +1,6 @@
 # Config Description
 
-## Global Configs
+## Run Configs
 
 These configs apply to all datasets.
 
@@ -8,16 +8,21 @@ These configs apply to all datasets.
 * minor_max - Additional poisoning on second level rf
 * n_cv_folds - Number of folds for cross validation of inner loop
 * n_estimators - Number of estimators used in random forest model
-* param_grid - Parameters for [hyperparameter](https://scikit-learn.org/stable/modules/ensemble.html#random-forest-parameters) optimization of random forests
+* sample_size - Set to 0 to simply take entire dataset, otherwise set to sample size
+* param_grid - Parameters for hyperparameter optimization of random forests
 * test_fraction - \[0, 100\] Percentage of dataset used for test data 
 * out_csv_dir - Folder for output csv files
-* graph_dir - Folder for saved output graphs
+* temp_csv_dir - Folder for temporary csv files
+* preprocess_dir - Folder for preprocessed csv files
+* matrix_dir - Folder for saved confusion matrices
+* datasets - List of dataset csv files in preprocess_dir folder
 
-## Dataset Configs
+## Preprocess Configs
 
 Specify settings for each dataset. There are default options that can be overridden by defining them for the individual dataset.
-
-* sample_size - Set to 0 to simply take entire dataset, otherwise set to sample size
-* data_path - The actual dataset
+* out_dir - Folder to store preprocessed datasets
+* data_path - Input dataset
 * ordinal_encode_columns - Array of column numbers to encode ordinal (one-hot is default)
+* drop_columns - Array of column numbers to drop
+* datetime_columns - Array of column numbers to convert to datetime
 * class_column - Column number of the dataset labels

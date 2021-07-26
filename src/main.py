@@ -4,7 +4,6 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn import preprocessing
 import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy.stats
@@ -12,7 +11,11 @@ import json
 import warnings
 import os
 import glob
+from time import perf_counter
+import preprocess
 # from sklearn.tree import export_graphviz  # used in comment
+
+CONFIG_FILE = '../config/run_config.json'
 
 
 def mineTrees(rf_model):
@@ -119,17 +122,11 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(prepped_data, config):
+def conf_matrix(prepped_data, name, config):
 	"""
 	:param prepped_data:        encoded dataframe to train and test forests
+	:param name:                name of dataset
 	:param config:              configuration dictionary
-	used configurations:
-		major_max:              number of major axis iterations
-		minor_max:              number of minor axis iterations
-		n_estimators:           number of estimators to use for random forest classifiers
-		n_cv_folds:             number of folds for stratified k fold cross-validator
-		matrix_path             path to folder for saving matrices (if None, does not save)
-		param_grid              parameters for hyperparameter optimization
 	"""
 	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
 	accuracy_list = []  # tuples: (major, minor, validation accuracy, test accuracy)
@@ -152,7 +149,8 @@ def conf_matrix(prepped_data, config):
 			stratify=None  # do not stratify
 		)
 
-	for major in range(0, config['major_max']):
+	major_max = min(config['major_max'], max(100 // len(pd.unique(prepped_data['Class'])), 1))  # cap major max
+	for major in range(major_max):
 		maj_poison_y = poison(min_train_y, major)
 		df = pd.DataFrame()
 
@@ -172,7 +170,7 @@ def conf_matrix(prepped_data, config):
 			minor_test_accuracy = accuracy_score(min_y_test, grid.best_estimator_.predict(min_x_test))
 			accuracy_list.append((major, minor, grid.best_score_, minor_test_accuracy))
 
-			print(f'\tOptimized parameters = {grid.best_params_}')
+			print(f'\tOptimized parameters = {grid.best_params_}')  # TODO: log this
 			print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
 			print(f'\tTest accuracy:{minor_test_accuracy:16.5f}')
 
@@ -195,7 +193,7 @@ def conf_matrix(prepped_data, config):
 		# throwing errors. This seems to be corrected now?
 		# matrix = confusion_matrix(test_data.minor, y_pred_test)
 		matrix = confusion_matrix(y_test, y_pred_test)
-		plot_matrix(matrix, major, config)  # plot if path specified
+		plot_matrix(matrix, major, name, config)  # plot if path specified
 		print(matrix)
 
 		entropy = scipy.stats.entropy(matrix.flatten())
@@ -204,60 +202,62 @@ def conf_matrix(prepped_data, config):
 		if major == 0:
 			first_matrix = matrix
 
-	entropy_df = pd.DataFrame(entropy_list, columns=['major', f'{config["filename"]}_entropy']).set_index('major')
-	plot(entropy_df, matrix, first_matrix, config)
+	entropy_df = pd.DataFrame(entropy_list, columns=['major', f'{name}_entropy']).set_index('major')
+	plot(entropy_df, matrix, first_matrix, name, config)
 
 	if not os.path.exists(config['temp_csv_dir']):
-		os.mkdir(config['temp_csv_dir'])
-	entropy_df.to_csv(f'{config["temp_csv_dir"]}{config["filename"]}.csv')
+		os.makedirs(config['temp_csv_dir'], exist_ok=True)
+	entropy_df.to_csv(f'{config["temp_csv_dir"]}{name}.csv')
 
 	accuracy_df = pd.DataFrame(accuracy_list, columns=['major', 'minor', 'validation', 'test'])
-	accuracy_df.to_csv(f'{config["out_csv_dir"]}/accuracies/{config["filename"]}_accuracy.csv')
+	accuracy_df.to_csv(f'{config["out_csv_dir"]}/accuracies/{name}_accuracy.csv')
 
 
-def plot(df_entropy, matrix, first_matrix, config):
+def plot(df_entropy, matrix, first_matrix, name, config):
 	"""
 	Plots the recorded entropy values and the final confusion matrix.
 	:param df_entropy:      Entropy dataframe. Should contain index col of Major values, 'Entropy' column of entropy values.
 	:param matrix:          Last confusion matrix
 	:param first_matrix     First confusion matrix
+	:param name:            name of dataset
 	:param config           Configuration dictionary
 	"""
 	sns.set(rc={'figure.figsize': (20, 10)})
 	fig, ax = plt.subplots(1, 3)  # For 1 x 3 figures in plot
 
-	ax[0] = sns.regplot(x=df_entropy.index, y=df_entropy[f'{config["filename"]}_entropy'], ax=ax[0])
+	ax[0] = sns.regplot(x=df_entropy.index, y=df_entropy[f'{name}_entropy'], ax=ax[0])
 	ax[0].set(title="Conf Matrix Entropy", xlabel="Major", ylabel="Entropy")
 
 	ax[1] = sns.heatmap(first_matrix, annot=True, annot_kws={'size': 10},
 						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[1])  # show first matrix
-	ax[1].set(title="First Confusion Matrix for Data Set " + config['name'])
+	ax[1].set(title="First Confusion Matrix for Data Set " + name)
 
 	ax[2] = sns.heatmap(matrix, annot=True, annot_kws={'size': 10},
 						cmap=plt.cm.Greens, linewidths=0.2, ax=ax[2])  # show last matrix
-	ax[2].set(title="Final Confusion Matrix for Data Set " + config['name'])
+	ax[2].set(title="Final Confusion Matrix for Data Set " + name)
 
-	plt.savefig(f'{config["out_csv_dir"]}{config["filename"]}.png')
+	plt.savefig(f'{config["out_csv_dir"]}{name}.png')
 	plt.close()
 
 
-def plot_matrix(matrix, major, config):
+def plot_matrix(matrix, major, name, config):
 	"""
 	plot and save confusion matrix
 	:param matrix:      confusion matrix to plot
 	:param major:       current major axis
+	:param name:        name of dataset
 	:param config:      configuration dictionary
 	"""
-	if config.get('matrix_path') is not None:
+	if config.get('matrix_dir') is not None:
 		sns.set(rc={'figure.figsize': (7, 7)})
 
 		ax = sns.heatmap(matrix, annot=True, annot_kws={'size': 10}, cmap=plt.cm.Greens, linewidths=0.2)
-		ax.set(title=f'Confusion Matrix: {config["name"]}, major={major}')
+		ax.set(title=f'Confusion Matrix: {name}, major={major}')
 
-		if not os.path.exists(config['matrix_path']):  # make folder for plots
-			os.mkdir(config['matrix_path'])
+		if not os.path.exists(config['matrix_dir']):  # make folder for plots
+			os.makedirs(config['matrix_dir'], exist_ok=True)
 
-		plt.savefig(config['matrix_path'] + f'conf_matrix_{config["filename"]}_{major}.png')
+		plt.savefig(config['matrix_dir'] + f'conf_matrix_{name}_{major}.png')
 		plt.close()  # garbage collect the figure
 
 
@@ -282,66 +282,28 @@ def entropy_plot(config):
 	plt.close()
 
 
-def prep_data(conf):
-	"""
-	read and preprocess data according to settings in conf
-	:param conf:        dictionary of configurations
-	:return:            dataframe where x is one-hot encoded and class is categorically encoded
-	"""
-	raw = pd.read_csv(conf['data_path'], header=None)
-
-	# replace NaN with median
-	for col in raw.columns:  # finance and Rain in Australia datasets are full of nan
-		if np.issubdtype(raw[col].dtype, np.number):
-			raw[col].replace(np.NaN, raw[col].mean(), inplace=True)  # TODO: compare with median
-
-	# if class column is set to -1, use last column
-	class_col = conf['class_column'] if conf['class_column'] != -1 else len(raw.columns) - 1
-	raw.rename(columns={class_col: 'Class'}, inplace=True)
-
-	# If the sample size is set to 0, just use the entire data set
-	# Otherwise, draw sample
-	if 0 < conf['sample_size'] <= len(raw.index):  # don't draw sample larger than dataset
-		raw = raw.sample(n=conf['sample_size'])
-
-	# one-hot encoding of the raw (except for the Class variable and ordinal-encoded/ignored columns)
-	encoded = pd.get_dummies(raw.drop(columns=['Class'] + conf['ordinal_encode_columns']))
-
-	# ordinal encode and add back ordinal encoded columns
-	for col_name in conf['ordinal_encode_columns']:
-		encoded[col_name] = pd.factorize(raw[col_name])[0]  # codes, not unique values
-
-	le = preprocessing.LabelEncoder()  # encode Class variable numerically
-	encoded['Class'] = le.fit_transform(raw['Class'])
-
-	# reset major_max in config if specified
-	if conf['major_max'] is None or conf['major_max'] >= (100 / len(le.classes_)):  # reset major to max possible
-		conf['major_max'] = max(100 // len(le.classes_), 1)  # prevent from being less than 1
-
-	return encoded
-
-
 def get_configs():
 	"""
-	gets and consolidates configs for each dataset
-	:return:    list of config dictionaries
+	:return:    list of configuration dictionaries for datasets
 	"""
-	config_file = "../config/config.json"  # relative path to config file
-	with open(config_file, 'rt') as f:
-		config_full = json.load(f)
+	with open(CONFIG_FILE, 'rt') as f:
+		config = json.load(f)
 
-	global_conf = config_full['global']
-	datasets = config_full['dataset']
-	default = config_full['default']  # default configs for datasets
+	datasets = config.pop('datasets')
+	return [{'dataset': dataset, **config} for dataset in datasets]  # individual configs for datasets
 
-	# config dictionaries for each dataset: conf comes after default so it will replace duplicate keys
-	configs = [{'name': name, **global_conf, **default, **conf} for name, conf in datasets.items()]
 
-	for c in configs:
-		c['filename'] = c['name'].replace(' ', '_').lower()  # clean filename
-		c['matrix_path'] = None if c.get('matrix_dir') is None else f'{c["matrix_dir"]}{c["filename"]}/'  # allow no graph
+def get_data(config):
+	"""
+	:param config: dataset configuration
+	:return:        dataframe
+	"""
+	data = pd.read_csv(config['preprocessed_dir'] + config['dataset'], header=None)
+	data.rename(columns={len(data.columns) - 1: 'Class'}, inplace=True)  # rename last col to 'Class'
 
-	return configs
+	if 0 < config['sample_size'] <= len(data.index):
+		return data.sample(n=config['sample_size'])
+	return data
 
 
 def combine_entropy_data(config):
@@ -358,15 +320,25 @@ def combine_entropy_data(config):
 	os.rmdir(config['temp_csv_dir'])
 
 
+def run_dataset(config):
+	"""
+	load dataset and generate confusion matrix results
+	:param config:      dataset configuration dictionary
+	"""
+	name = os.path.splitext(config['dataset'])[0]
+	print("PROCESSING DATA SET: " + name)
+	data = get_data(config)
+	conf_matrix(data, name, config)
+
+
 def main():
-	# Each data set is an element in the configs list
-	# Loop through and process each.
+	# preprocess.preprocess(dataset_names=None)  # None means all datasets
+	os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
 	configs = get_configs()
 
 	for config in configs:
-		print("PROCESSING DATA SET: " + config['name'])
-		data = prep_data(config)
-		conf_matrix(data, config)
+		run_dataset(config)
 
 	combine_entropy_data(configs[0])
 	entropy_plot(configs[0])
@@ -408,10 +380,6 @@ TODOS from 7/8/2021 email:
 12. Global explanations can be managed by using functional data depth on entropy lines? Reporting breaking points in performance wrt. the poisoning rate?
 13. Local explanations (which data points' removal cause the biggest drop in datasets)
 
-Presentations:
-1. AUC, log loss, bias, precision, recall: Simon
-2. Class imbalance & oversampling/upsampling/downsampling (smote): Jon
-
 Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
 (book https://ema.drwhy.ai/shapley.html)
 
@@ -425,45 +393,5 @@ Huseyin's:  https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpn
 ========================================================================================================================
 
 ISSUES:
-
-1)
-- Fix: skip decision trees where the graph is empty, (higher sample size should lower issue frequency).
-- Caused by an empty decision tree (no decision cause it had one class for training).
-- Or an empty decision tree graph (idk how these arent the same thing but it still crashes if i check tree node count).
-- Happens rarely with Adult and Breast Cancer ds, often with BTC Heist set.
-
-D:\Code\poison\venv\lib\site-packages\numpy\core\fromnumeric.py:3420: RuntimeWarning: Mean of empty slice.
-  out=out, **kwargs)
-D:\Code\poison\venv\lib\site-packages\numpy\core\_methods.py:188: RuntimeWarning: invalid value encountered in double_scalars
-  ret = ret.dtype.type(ret / rcount)
-Traceback (most recent call last):
-  File "D:/Code/poison/multiversePy/src/main.py", line 221, in <module>
-    conf_matrix(data_train, data_test, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
-  File "D:/Code/poison/multiversePy/src/main.py", line 138, in conf_matrix
-    result = mineTrees(rf_first_level)
-  File "D:/Code/poison/multiversePy/src/main.py", line 58, in mineTrees
-    diameter = nx.diameter(nx.to_undirected(graph))  # greatest distance b/w any pair of vertices
-  File "D:\Code\poison\venv\lib\site-packages\networkx\algorithms\distance_measures.py", line 300, in diameter
-    return max(e.values())
-ValueError: max() arg is an empty sequence
-
-2)
-- Fix: workaround = try-catch in conf_matrix for train_test_split (higher sample size should lower issue frequency).
-- A better fix might be to take a stratified sample in pred_data, this should solve the root issue.
-- It throws a ValueError for BTC Heist dataset because it cannot stratify.
-- It cannot stratify because there too few examples of the minority classes in the sample.
-
-Traceback (most recent call last):
-  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 250, in <module>
-    conf_matrix(data, config['major_max'], config['minor_max'], n_est=config['n_estimators'])
-  File "/home/jon/PycharmProjects/multiversePy/src/main.py", line 132, in conf_matrix
-    train, first_x_test, train['Class'], first_y_test = train_test_split(  # recombine train x and y for poisoning
-  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/sklearn/model_selection/_split.py", line 2197, in train_test_split
-    train, test = next(cv.split(X=arrays[0], y=stratify))
-  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/sklearn/model_selection/_split.py", line 1387, in split
-    for train, test in self._iter_indices(X, y, groups):
-  File "/home/jon/PycharmProjects/multiversePy/venv/lib/python3.9/site-packages/sklearn/model_selection/_split.py", line 1715, in _iter_indices
-    raise ValueError("The least populated class in y has only 1"
-ValueError: The least populated class in y has only 1 member, which is too few. The minimum number of groups for any class cannot be less than 2.
 
 """
