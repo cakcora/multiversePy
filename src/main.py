@@ -336,7 +336,6 @@ def main():
 	os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 	configs = get_configs()
-
 	for config in configs:
 		run_dataset(config)
 
@@ -345,53 +344,6 @@ def main():
 
 
 if __name__ == '__main__':
+	t = perf_counter()
 	main()
-
-"""
-***************************************************************************************************************
-* Note: The kdd cup data set is >100mb, it cannot be stored on github, you will have to download it           *
-*       yourself and put the csv in data/kdd_cup/                                                             *
-* Note: The bitcoin data set is >200mb, it cannot be stored on github, you will have to download it yourself  *
-*       and put the csv in data/bitcoin_heist/BitcoinHeistData.csv                                            *
-***************************************************************************************************************
-
-TODO:
-1. Clean the datasets
-2. Save clean versions of datasets
-3. Look into Compute Canada
-4. UCI data downloading 
-5. Scale features if too big
-
-Ignored Datasets:
-	haberman: 				too few features
-	temp of maj cities: 	regression
-	wisconsin cancer: 		duplicate
-
-Check Back on:
-	data imputation for NaN -> mean vs median vs other?
-
-TODOS from 7/8/2021 email:
-	6. Create configs for datasets (start with Huseyin's 18 datasets) https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
-	7. Run two level RF analysis on the datasets
-	8. Record entropy for major poisoning levels
-9. Record performance (AUC, Bias, LogLoss) of the first level RF trained on test data
-10. Use the fewest neurons and the fewest neural network layers to reach RF performance (or use the same number of neurons and layers for all datasets and compare performance results?)
-11. Based on RF breaking point and NN simplicity, explain data in global terms (global explanations) or in terms of salient data points (local explanations). Both are open research problems.
-12. Global explanations can be managed by using functional data depth on entropy lines? Reporting breaking points in performance wrt. the poisoning rate?
-13. Local explanations (which data points' removal cause the biggest drop in datasets)
-
-Shapley values for feature importance (which features are important) https://dalex.drwhy.ai/
-(book https://ema.drwhy.ai/shapley.html)
-
-========================================================================================================================
-
-DATASETS:
-adult:		https://archive.ics.uci.edu/ml/datasets/Adult
-bc:			https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
-btc heist:	https://archive.ics.uci.edu/ml/datasets/BitcoinHeistRansomwareAddressDataset
-Huseyin's:  https://drive.google.com/drive/folders/1cavYoE2ocmAYlP0VIWiT6Q-JTrpnHn6T?usp=sharing
-========================================================================================================================
-
-ISSUES:
-
-"""
+	print(f'Time: {perf_counter() - t:.2f}')
