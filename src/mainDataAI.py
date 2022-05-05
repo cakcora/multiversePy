@@ -128,20 +128,20 @@ def poison(target_data, percentage, message=False):
 	return poisoned_data
 
 
-def conf_matrix(prepped_data, name, config):
+def process_data(prepped_data, name, config):
 	"""
 	:param prepped_data:        encoded dataframe to train and test forests
 	:param name:                name of dataset
 	:param config:              configuration dictionary
 	"""
-	entropy_list = []  # Will hold tuples of the form (Major, Entropy Value)
-	accuracy_list = []  # tuples: (major, minor, validation accuracy, test accuracy)
+	entropy_list = []  # Will hold tuples of the form (name, Entropy Value)
+	accuracy_list = []  # tuples: (name, validation accuracy, test accuracy)
 
 	# first test-train split
 	y = prepped_data['Class']
 
 	try:
-		min_train_x, min_x_test, min_train_y, min_y_test = train_test_split(
+		min_train_x, x_test, min_train_y, y_test = train_test_split(
 			prepped_data.drop(columns=['Class']),
 			y,
 			random_state=1,
@@ -149,75 +149,45 @@ def conf_matrix(prepped_data, name, config):
 		)
 	except ValueError as e:
 		warnings.warn(str(e), UserWarning)
-		min_train_x, min_x_test, min_train_y, min_y_test = train_test_split(  # workaround for BTC Heist
+		min_train_x, x_test, min_train_y, y_test = train_test_split(  # workaround for BTC Heist
 			prepped_data.drop(columns=['Class']),
 			y,
 			random_state=1,
 			stratify=None  # do not stratify
 		)
 
-	major_max = min(config['major_max'], max(100 // len(pd.unique(prepped_data['Class'])), 1))  # cap major max
-	for major in range(major_max):
-		maj_poison_y = poison(min_train_y, major)
-		df = pd.DataFrame()
 
-		for minor in range(0, config['minor_max']):
-			print("\nmajor:", major, " minor:", minor)
-			min_poison_y = poison(maj_poison_y, minor, True)
+	df = pd.DataFrame()
+	# config['param_grid'] = {}  # speed up for debugging by not optimizing
+	grid = GridSearchCV(
+		estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
+		param_grid=config['param_grid'],
+		cv=config['n_cv_folds'],
+		n_jobs=1
+	)
+	grid.fit(min_train_x, min_train_y)
 
-			# config['param_grid'] = {}  # speed up for debugging by not optimizing
-			grid = GridSearchCV(
-				estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
-				param_grid=config['param_grid'],
-				cv=config['n_cv_folds'],
-				n_jobs=1
-			)
-			grid.fit(min_train_x, min_poison_y)
+	predicted = grid.best_estimator_.predict(x_test)
+	test_accuracy = accuracy_score(y_test, predicted)
+	accuracy_list.append((name, grid.best_score_, test_accuracy))
+	matrix = confusion_matrix(y_test, predicted)
+	plot_matrix(matrix, name, config)  # plot if path specified
+	print(matrix)
+	entropy = scipy.stats.entropy(matrix.flatten())
+	entropy_list.append((name, entropy))
 
-			minor_test_accuracy = accuracy_score(min_y_test, grid.best_estimator_.predict(min_x_test))
-			accuracy_list.append((major, minor, grid.best_score_, minor_test_accuracy))
+	print(f'\tOptimized parameters = {grid.best_params_}')  # TODO: log this
+	print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
+	print(f'\tTest accuracy:{test_accuracy:16.5f}')
 
-			print(f'\tOptimized parameters = {grid.best_params_}')  # TODO: log this
-			print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
-			print(f'\tTest accuracy:{minor_test_accuracy:16.5f}')
-
-			result = mineTrees(grid.best_estimator_)
-			result['minor'] = minor
-			df = df.append(result)
-
-		y = df['minor']
-		x = df.drop('minor', axis=1)
-
-		# Second test-train split
-		x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=1, stratify=y)
-
-		rf_second_level = RandomForestClassifier(n_estimators=config['n_estimators'])
-		rf_second_level.fit(x_train, y_train)
-
-		y_pred_test = rf_second_level.predict(x_test)  # test second level model
-
-		# The commented line is what was added during the meeting, however it was
-		# throwing errors. This seems to be corrected now?
-		# matrix = confusion_matrix(test_data.minor, y_pred_test)
-		matrix = confusion_matrix(y_test, y_pred_test)
-		plot_matrix(matrix, major, name, config)  # plot if path specified
-		print(matrix)
-
-		entropy = scipy.stats.entropy(matrix.flatten())
-		entropy_list.append((major, entropy))
-
-		if major == 0:
-			first_matrix = matrix
-
-	entropy_df = pd.DataFrame(entropy_list, columns=['major', f'{name}_entropy']).set_index('major')
-	plot(entropy_df, matrix, first_matrix, name, config)
-
-	if not os.path.exists(config['temp_csv_dir']):
-		os.makedirs(config['temp_csv_dir'], exist_ok=True)
-	entropy_df.to_csv(f'{config["temp_csv_dir"]}{name}.csv')
-
-	accuracy_df = pd.DataFrame(accuracy_list, columns=['major', 'minor', 'validation', 'test'])
-	accuracy_df.to_csv(f'{config["out_csv_dir"]}/accuracies/{name}_accuracy.csv')
+	result = mineTrees(grid.best_estimator_)
+	# Poupak:  write result into a file for each dataset
+	if not os.path.exists(config['out_csv_dir']):
+		os.makedirs(config['out_csv_dir'], exist_ok=True)
+	accuracy_df = pd.DataFrame(accuracy_list, columns=['name','validation', 'test'])
+	accuracy_df.to_csv(f'{config["out_csv_dir"]}global_accuracy.csv',mode='a')
+	entropy_df = pd.DataFrame(entropy_list, columns=['name', 'entropy']).set_index('name')
+	entropy_df.to_csv(f'{config["out_csv_dir"]}global_entropy.csv',mode='a')
 
 
 def plot(df_entropy, matrix, first_matrix, name, config):
@@ -247,7 +217,7 @@ def plot(df_entropy, matrix, first_matrix, name, config):
 	plt.close()
 
 
-def plot_matrix(matrix, major, name, config):
+def plot_matrix(matrix,  name, config):
 	"""
 	plot and save confusion matrix
 	:param matrix:      confusion matrix to plot
@@ -259,12 +229,12 @@ def plot_matrix(matrix, major, name, config):
 		sns.set(rc={'figure.figsize': (7, 7)})
 
 		ax = sns.heatmap(matrix, annot=True, annot_kws={'size': 10}, cmap=plt.cm.Greens, linewidths=0.2)
-		ax.set(title=f'Confusion Matrix: {name}, major={major}')
+		ax.set(title=f'Confusion Matrix: {name}')
 
 		if not os.path.exists(config['matrix_dir']):  # make folder for plots
 			os.makedirs(config['matrix_dir'], exist_ok=True)
 
-		plt.savefig(config['matrix_dir'] + f'conf_matrix_{name}_{major}.png')
+		plt.savefig(config['matrix_dir'] + f'conf_matrix_{name}.png')
 		plt.close()  # garbage collect the figure
 
 
@@ -335,11 +305,11 @@ def run_dataset(config):
 	name = os.path.splitext(config['dataset'])[0]
 	print("PROCESSING DATA SET: " + name)
 	data = get_data(config)
-	conf_matrix(data, name, config)
+	process_data(data, name, config)
 
 
 def main():
-	# preprocess.preprocess(dataset_names=None)  # None means all datasets
+	preprocess.preprocess(dataset_names=None)  # None means all datasets
 	os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 	configs = get_configs()
