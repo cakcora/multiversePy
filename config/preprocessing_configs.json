@@ -9,87 +9,11 @@
     },
     "datasets": {
         "Adult": {
-            "data_path": "../data/census/combined.csv"
+            "data_path": "../data/Adult/adult.csv"
         },
-        "Breast Cancer": {
-            "data_path": "../data/breast_cancer/breast-cancer-wisconsin.data"
-        },
-        "Bitcoin Heist": {
-            "data_path": "../data/bitcoin_heist/BitcoinHeistData.csv",
-            "ignore_head": true,
-            "drop_columns": [0]
-        },
-        "churn modelling": {
-            "data_path": "../data/churn_modelling/Churn_Modelling.csv",
-            "drop_columns": [0, 1, 2],
-            "ignore_head": true
-        },
-        "Bank Marketing Data Set": {
-            "data_path": "../data/bank_marketing_data_set/bank-full-preprocessed.csv",
-            "ignore_head": true
-        },
-        "Rain in Australia": {
-            "data_path": "../data/rain_in_australia/corrected_weatherAUS.csv",
-            "datetime_columns": [0]
-        },
-        "kdd cup": {
-            "data_path": "../data/kdd_cup/kddcup_corrected.data"
-        },
-        "fly satisfaction": {
-            "data_path": "../data/fly_satisfaction/combined.csv",
-            "ignore_head": true,
-            "drop_columns": [0, 1]
-        },
-        "emails": {
-            "data_path": "../data/emails/emails.csv",
-            "ignore_head": true,
-            "drop_columns": [0]
-        },
-        "Online Credit Card Transactions": {
-            "data_path": "../data/online_credit_card_transactions/corrected_CC_FRAUD.csv",
-            "ignore_head": true,
-            "ordinal_encode_columns": [0]
-        },
-        "water quality": {
-            "data_path": "../data/water_quality/water_potability.csv",
-            "ignore_head": true
-        },
-        "Financial 2014": {
-            "data_path": "../data/financial/2014_Financial_Data.csv",
-            "ignore_head": true,
-            "drop_columns": [0]
-        },
-        "Financial 2015": {
-            "data_path": "../data/financial/2015_Financial_Data.csv",
-            "ignore_head": true,
-            "drop_columns": [0]
-        },
-        "Financial 2016": {
-            "data_path": "../data/financial/2016_Financial_Data.csv",
-            "ignore_head": true,
-            "drop_columns": [0]
-        },
-        "Financial 2017": {
-            "data_path": "../data/financial/2017_Financial_Data.csv",
-            "ignore_head": true,
-            "drop_columns": [0]
-        },
-        "Financial 2018": {
-            "data_path": "../data/financial/2018_Financial_Data.csv",
-            "ignore_head": true,
-            "drop_columns": [0]
-        },
-        "nursery": {
-            "data_path": "../data/nursery/spec_prior-priority-nursery.data"
-        },
-        "The Cleveland Heart Disease Dataset": {
-            "data_path": "../data/the_cleveland_heart_disease_dataset/processed.cleveland.data"
-        },
-        "The knote Authentication Dataset": {
-            "data_path": "../data/the_knote_authentication_dataset/data_banknote_authentication.txt"
-        },
-        "spambase": {
-            "data_path": "../data/spambase/spambase.data"
+        "BitcoinHeistData": {
+            "data_path": "../data/bitcoin_heist/BitcoinHeistData.csv"
         }
+
     }
 }
