@@ -11,8 +11,8 @@
         "Adult": {
             "data_path": "../data/Adult/adult.csv"
         },
-        "Adult2": {
-            "data_path": "../data/Adult/adult.csv"
+        "BitcoinHeistData": {
+            "data_path": "../data/bitcoin_heist/BitcoinHeistData.csv"
         }
 
     }

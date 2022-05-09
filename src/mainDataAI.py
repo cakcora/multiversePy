@@ -34,7 +34,7 @@ def mineTrees(rf_model, dataset_name, feature_name):
     for t in range(0, rf_model.n_estimators):
         # print("Tree " + str(t) + " is processing")
         tree = rf_model.estimators_[t]
-        graph = nx.DiGraph() # Multiple edges are not allowed
+        graph = nx.DiGraph()  # Multiple edges are not allowed
         # export_graphviz(tree, out_file=str('results/trees/tree') + str(t) + '.dot',
         # feature_names=dataTrain.columns,class_names=data2.Class,rounded=True,
         # proportion=False,precision=2, filled=True)
@@ -96,6 +96,7 @@ def mineTrees(rf_model, dataset_name, feature_name):
                median_in_degree, avg_in_degree, depth, num_of_branches, branching_ratio]
 
         result.loc[t] = row
+
     return result
 
 
@@ -152,14 +153,16 @@ def process_data(prepped_data, name, config, feature_name):
 
     result = mineTrees(grid.best_estimator_, name,
                        feature_name)  # print it into a file (which dataset, which perturb feature)
-    # Poupak:  write result into a file for each dataset
     if not os.path.exists(config['out_csv_dir']):
         os.makedirs(config['out_csv_dir'], exist_ok=True)
     accuracy_df = pd.DataFrame(accuracy_list, columns=['name', 'validation', 'test'])
     accuracy_df.to_csv(f'{config["out_csv_dir"]}global_accuracy.csv', mode='w')
     entropy_df = pd.DataFrame(entropy_list, columns=['name', 'entropy']).set_index('name')
     entropy_df.to_csv(f'{config["out_csv_dir"]}global_entropy.csv', mode='w')
-    result.to_csv(f'{config["out_csv_dir"]}results.csv', mode='a')
+    if not os.path.exists(f'{config["out_csv_dir"]}results_{name}.csv'):
+        result.to_csv(f'{config["out_csv_dir"]}results_{name}.csv', mode='a', header=True, index=False)
+    else:
+        result.to_csv(f'{config["out_csv_dir"]}results_{name}.csv', mode='a', header=False, index=False)
 
 
 def plot(df_entropy, matrix, first_matrix, name, config):
@@ -283,22 +286,32 @@ def run_dataset(config, feature_name):
 def main():
     configs_preprocessing = preprocess.get_configs()
     configs_runs = get_configs()
-    # print(configs)
     for i in range(len(configs_preprocessing)):
         conf = configs_preprocessing[i]
         dataset_name = conf["name"]
         raw = pd.read_csv(conf["data_path"], sep=',', header=0)
 
-        preprocess.preprocess_dataset_with_raw_data(conf=conf,
-                                                    raw=raw)  # None means all datasets
-        for column in raw.loc[:-1,raw.columns!="Class"]:
+        # iteration on features for PF experiments
+        for column in raw.columns.values[:-1]:
             np.random.shuffle(raw[column].values)
-
+            preprocess.preprocess_dataset_with_raw_data(conf=conf,
+                                                        raw=raw)  # None means all datasets
             config = configs_runs[i]
             if str.lower(dataset_name) not in config["name"]:
                 exit('Configs do not have the same order')
             run_dataset(config, column)
             print("Running for {} is completed \n".format(column))
+
+        # working on VF experiments
+        # reading raw data again because raw on ram is shuffled
+        raw = pd.read_csv(conf["data_path"], sep=',', header=0)
+        preprocess.preprocess_dataset_with_raw_data(conf=conf,
+                                                    raw=raw)  # None means all datasets
+        config = configs_runs[i]
+        if str.lower(dataset_name) not in config["name"]:
+            exit('Configs do not have the same order')
+        run_dataset(config, "Vanilla")
+        print("Running for {} is completed \n".format("Vanilla"))
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
