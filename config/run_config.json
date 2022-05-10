@@ -2,8 +2,8 @@
     "major_max": 20,
     "minor_max": 20,
     "n_cv_folds": 10,
-    "n_estimators": 100,
-    "sample_size": 1000,
+    "n_estimators": 300,
+    "sample_size": 0,
     "param_grid": {
         "criterion": ["gini", "entropy"],
         "min_samples_split": [0.001, 0.01, 0.02],
@@ -18,7 +18,6 @@
         "adult.csv",
         "chesskingrookvsking.csv",
         "mushroom.csv",
-        "nursery.csv",
-        "spambase.csv"
+        "nursery.csv"
     ]
 }

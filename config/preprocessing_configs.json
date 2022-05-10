@@ -20,9 +20,6 @@
         },
         "Nursery": {
             "data_path": "../data/Nursery/nursery.csv"
-        },
-        "Spambase": {
-            "data_path": "../data/Spambase/spambase.csv"
         }
     }
 }

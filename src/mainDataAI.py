@@ -13,7 +13,6 @@ import os
 import glob
 from time import perf_counter
 import preprocess
-import xai
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -167,7 +166,7 @@ def process_data(prepped_data, name, config, feature_name):
         result.to_csv(f'{config["out_csv_dir"]}results_{name}.csv', mode='a', header=True, index=False)
     else:
         result.to_csv(f'{config["out_csv_dir"]}results_{name}.csv', mode='a', header=False, index=False)
-
+    return min_train_x
 
 def plot(df_entropy, matrix, first_matrix, name, config):
     """
