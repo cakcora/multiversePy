@@ -138,15 +138,6 @@ def process_data(prepped_data, name, config, feature_name):
     clf.fit(min_train_x, min_train_y)
     predicted = clf.predict(x_test)
 
-    # grid = GridSearchCV(
-    #     estimator=RandomForestClassifier(max_depth=100, n_estimators=config['n_estimators']),
-    #     param_grid=config['param_grid'],
-    #     cv=config['n_cv_folds'],
-    #     n_jobs=1
-    # )
-    # grid.fit(min_train_x, min_train_y)
-    # predicted = grid.best_estimator_.predict(x_test)
-
     test_accuracy = accuracy_score(y_test, predicted)
     accuracy_list.append((name, clf.best_score_, test_accuracy))
     matrix = confusion_matrix(y_test, predicted)
