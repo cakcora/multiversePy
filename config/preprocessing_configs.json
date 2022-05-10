@@ -8,12 +8,21 @@
         "class_column": -1
     },
     "datasets": {
+
         "Adult": {
             "data_path": "../data/Adult/adult.csv"
         },
-        "BitcoinHeistData": {
-            "data_path": "../data/bitcoin_heist/BitcoinHeistData.csv"
+        "ChessKingRookvsKing": {
+            "data_path": "../data/ChessKingRookvsKing/chesskingrookvsking.csv"
+        },
+        "Mushroom": {
+            "data_path": "../data/Mushroom/mushroom.csv"
+        },
+        "Nursery": {
+            "data_path": "../data/Nursery/nursery.csv"
+        },
+        "Spambase": {
+            "data_path": "../data/Spambase/spambase.csv"
         }
-
     }
 }

@@ -1,2 +1,0 @@
-There are 1372 items (images of banknotes — think Euro or dollar bill). There are 4 predictor variables (variance of image, skewness, kurtosis, entropy).
- The variable to predict is encoded as 0 	(authentic) or 1 (forgery). 

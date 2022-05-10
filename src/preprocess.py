@@ -5,7 +5,6 @@ import json
 import os
 from time import perf_counter
 
-
 CONFIG_FILE = '../config/preprocessing_configs.json'
 
 def preprocess_dataset_with_raw_data(conf, raw):
@@ -96,12 +95,16 @@ def get_configs():
 
 
 if __name__ == '__main__':
-	t = perf_counter()
-	adult = pd.read_csv("../data/Adult/adult.csv",sep=",", header=None)
+	# t = perf_counter()
+	# adult = pd.read_csv("../data/Adult/adult.csv",sep=",", header=None)
 	configs = get_configs()
-	print(configs)
-	for conf in configs:
-		preprocess_dataset_with_raw_data(conf, raw=adult)
+	# for conf in configs:
+	# 	preprocess_dataset_with_raw_data(conf, raw=adult)
 
+	for i in range(len(configs)):
+		conf = configs[i]
+		dataset_name = conf["name"]
+		raw = pd.read_csv(conf["data_path"], sep=',', header=0)
+		preprocess_dataset_with_raw_data(conf, raw=raw)
 
-	print(f'Time: {perf_counter() - t:.2f}')
+	# print(f'Time: {perf_counter() - t:.2f}')

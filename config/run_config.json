@@ -16,24 +16,9 @@
     "matrix_dir": null,
     "datasets": [
         "adult.csv",
-        "bank_marketing_data_set.csv",
-        "bitcoin_heist.csv",
-        "breast_cancer.csv",
-        "churn_modelling.csv",
-        "emails.csv",
-        "financial_2014.csv",
-        "financial_2015.csv",
-        "financial_2016.csv",
-        "financial_2017.csv",
-        "financial_2018.csv",
-        "fly_satisfaction.csv",
-        "kdd_cup.csv",
+        "chesskingrookvsking.csv",
+        "mushroom.csv",
         "nursery.csv",
-        "online_credit_card_transactions.csv",
-        "rain_in_australia.csv",
-        "spambase.csv",
-        "the_cleveland_heart_disease_dataset.csv",
-        "the_knote_authentication_dataset.csv",
-        "water_quality.csv"
+        "spambase.csv"
     ]
 }

@@ -13,6 +13,10 @@ import os
 import glob
 from time import perf_counter
 import preprocess
+import xai
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # from sklearn.tree import export_graphviz  # used in comment
 
@@ -29,7 +33,7 @@ def mineTrees(rf_model, dataset_name, feature_name):
                                    'weak_components',
                                    'strong_components',
                                    'node_connectivity', 'mean_hub_score', 'mean_auth_score',
-                                   'median_degree', 'mean_degree', 'depth', 'num_of_branches', 'branching_ratio'])
+                                                    'median_degree', 'mean_degree', 'depth', 'total_length_of_branches', 'branching_ratio'])
 
     for t in range(0, rf_model.n_estimators):
         # print("Tree " + str(t) + " is processing")
@@ -43,8 +47,8 @@ def mineTrees(rf_model, dataset_name, feature_name):
         features = tree.tree_.feature
 
         depth = tree.tree_.max_depth
-        num_of_branches = tree.tree_.node_count - 1
-        branching_ratio = depth / num_of_branches
+        total_length_of_branches = tree.tree_.node_count - 1
+        branching_ratio = depth / total_length_of_branches
 
         for n in range(0, len(left_children)):
 
@@ -93,7 +97,7 @@ def mineTrees(rf_model, dataset_name, feature_name):
 
         row = [dataset_name, feature_name, t, nodes, edges, diameter, weak_comp, strong_comp,
                node_connectivity, mean_hub_score, mean_auth_score,
-               median_in_degree, avg_in_degree, depth, num_of_branches, branching_ratio]
+               median_in_degree, avg_in_degree, depth, total_length_of_branches, branching_ratio]
 
         result.loc[t] = row
 
@@ -131,7 +135,7 @@ def process_data(prepped_data, name, config, feature_name):
     df = pd.DataFrame()
     # config['param_grid'] = {}  # speed up for debugging by not optimizing
     grid = GridSearchCV(
-        estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
+        estimator=RandomForestClassifier(max_depth=100, n_estimators=config['n_estimators']),
         param_grid=config['param_grid'],
         cv=config['n_cv_folds'],
         n_jobs=1
@@ -313,6 +317,7 @@ def main():
         run_dataset(config, "Vanilla")
         print("Running for {} is completed \n".format("Vanilla"))
 
+
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
     combine_entropy_data(configs_runs[0])
@@ -323,3 +328,4 @@ if __name__ == '__main__':
     t = perf_counter()
     main()
     print(f'Time: {perf_counter() - t:.2f}')
+

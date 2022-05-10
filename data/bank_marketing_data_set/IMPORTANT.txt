@@ -1,8 +1,0 @@
-For multiverse you should use "bank-full-preprocessed.csv"
-
-
-notes: 
-
-	-> ";" changed to ","
-
-	-> "" character deleted from each feature.
