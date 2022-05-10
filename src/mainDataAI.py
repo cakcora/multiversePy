@@ -21,8 +21,9 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 # from sklearn.tree import export_graphviz  # used in comment
 CONFIG_FILE = '../config/run_config.json'
 
-for filename in os.listdir("../results/branching_ratio/"):
-    os.remove("../results/branching_ratio/" + filename)
+for filename in os.listdir("../results/"):
+    if filename.endswith(".csv"):
+        os.remove("../results/" + filename)
 
 def mineTrees(rf_model, dataset_name, feature_name):
     """
