@@ -14,13 +14,14 @@ import glob
 from time import perf_counter
 import preprocess
 import warnings
+from xai import *
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
 # from sklearn.tree import export_graphviz  # used in comment
-
 CONFIG_FILE = '../config/run_config.json'
 
+for filename in os.listdir("../results/branching_ratio/"):
+    os.remove("../results/branching_ratio/" + filename)
 
 def mineTrees(rf_model, dataset_name, feature_name):
     """
@@ -133,28 +134,32 @@ def process_data(prepped_data, name, config, feature_name):
 
     df = pd.DataFrame()
     # config['param_grid'] = {}  # speed up for debugging by not optimizing
-    grid = GridSearchCV(
-        estimator=RandomForestClassifier(max_depth=100, n_estimators=config['n_estimators']),
-        param_grid=config['param_grid'],
-        cv=config['n_cv_folds'],
-        n_jobs=1
-    )
-    grid.fit(min_train_x, min_train_y)
+    clf = RandomForestClassifier(max_depth=100, n_estimators=config['n_estimators'])
+    clf.fit(min_train_x, min_train_y)
+    predicted = clf.predict(x_test)
 
-    predicted = grid.best_estimator_.predict(x_test)
+    # grid = GridSearchCV(
+    #     estimator=RandomForestClassifier(max_depth=100, n_estimators=config['n_estimators']),
+    #     param_grid=config['param_grid'],
+    #     cv=config['n_cv_folds'],
+    #     n_jobs=1
+    # )
+    # grid.fit(min_train_x, min_train_y)
+    # predicted = grid.best_estimator_.predict(x_test)
+
     test_accuracy = accuracy_score(y_test, predicted)
-    accuracy_list.append((name, grid.best_score_, test_accuracy))
+    accuracy_list.append((name, clf.best_score_, test_accuracy))
     matrix = confusion_matrix(y_test, predicted)
     plot_matrix(matrix, name, config)  # plot if path specified
     print(matrix)
     entropy = scipy.stats.entropy(matrix.flatten())
     entropy_list.append((name, entropy))
 
-    print(f'\tOptimized parameters = {grid.best_params_}')  # TODO: log this
-    print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
+    print(f'\tOptimized parameters = {clf.best_params_}')  # TODO: log this
+    print(f'\tValidation accuracy:{clf.best_score_:10.5f}')
     print(f'\tTest accuracy:{test_accuracy:16.5f}')
 
-    result = mineTrees(grid.best_estimator_, name,
+    result = mineTrees(clf.best_estimator_, name,
                        feature_name)  # print it into a file (which dataset, which perturb feature)
     if not os.path.exists(config['out_csv_dir']):
         os.makedirs(config['out_csv_dir'], exist_ok=True)

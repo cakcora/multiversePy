@@ -10,7 +10,7 @@
         "max_features": ["log2", "sqrt"]
     },
     "test_fraction": 0.25,
-    "out_csv_dir": "../results/",
+    "out_csv_dir": "../results/branching_ratio",
     "temp_csv_dir": "../results/tmp/",
     "preprocessed_dir": "../preprocessed/",
     "matrix_dir": null,

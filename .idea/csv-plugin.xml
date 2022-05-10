@@ -108,6 +108,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\results\branching_ratio\global_accuracy.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\results\branching_ratio\global_entropy.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\results\global_accuracy.csv">
           <value>
             <Attribute>
