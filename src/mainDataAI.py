@@ -3,7 +3,9 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import accuracy_score
 import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy.stats
@@ -14,7 +16,6 @@ import glob
 from time import perf_counter
 import preprocess
 import warnings
-from xai import *
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 # from sklearn.tree import export_graphviz  # used in comment
@@ -138,19 +139,16 @@ def process_data(prepped_data, name, config, feature_name):
     clf.fit(min_train_x, min_train_y)
     predicted = clf.predict(x_test)
 
-    test_accuracy = accuracy_score(y_test, predicted)
-    accuracy_list.append((name, clf.best_score_, test_accuracy))
+    test_accuracy = metrics.accuracy_score(y_test, predicted)
     matrix = confusion_matrix(y_test, predicted)
     plot_matrix(matrix, name, config)  # plot if path specified
     print(matrix)
     entropy = scipy.stats.entropy(matrix.flatten())
     entropy_list.append((name, entropy))
 
-    print(f'\tOptimized parameters = {clf.best_params_}')  # TODO: log this
-    print(f'\tValidation accuracy:{clf.best_score_:10.5f}')
     print(f'\tTest accuracy:{test_accuracy:16.5f}')
 
-    result = mineTrees(clf.best_estimator_, name,
+    result = mineTrees(clf, name,
                        feature_name)  # print it into a file (which dataset, which perturb feature)
     if not os.path.exists(config['out_csv_dir']):
         os.makedirs(config['out_csv_dir'], exist_ok=True)
@@ -311,6 +309,7 @@ def main():
             exit('Configs do not have the same order')
         run_dataset(config, "Vanilla")
         print("Running for {} is completed \n".format("Vanilla"))
+
 
 
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
