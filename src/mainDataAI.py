@@ -149,8 +149,7 @@ def process_data(prepped_data, name, config, feature_name):
 
     print(f'\tTest accuracy:{test_accuracy:16.5f}')
 
-    result = mineTrees(clf, name,
-                       feature_name)  # print it into a file (which dataset, which perturb feature)
+    result = mineTrees(clf, name, feature_name)
     if not os.path.exists(config['out_csv_dir']):
         os.makedirs(config['out_csv_dir'], exist_ok=True)
     accuracy_df = pd.DataFrame(accuracy_list, columns=['name', 'validation', 'test'])
