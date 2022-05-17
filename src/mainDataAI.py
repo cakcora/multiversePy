@@ -262,6 +262,7 @@ def combine_entropy_data(config):
 	"""
     files = glob.glob(f'{config["temp_csv_dir"]}*.csv')  # all temp csv files
     dataframes = [pd.read_csv(file, index_col=0) for file in files]  # dataframes for temp csv files
+
     pd.concat(dataframes, axis=1).to_csv(f'{config["out_csv_dir"]}entropy.csv')
 
     for file in files:  # clean temp files

@@ -3,13 +3,6 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
-        <entry key="\data\Abalone\abalone.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\data\Adult\adult.csv">
           <value>
             <Attribute>
@@ -17,28 +10,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\data\AuctionVerification\auctionverification.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\data\CarEvaluation\carevaluation.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\data\ChessKingRookvsKing\chesskingrookvsking.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\data\DrugConsumptionQuantified\DrugConsumptionQuantified.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -59,13 +31,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\data\Secom\secom.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\data\Spambase\spambase.csv">
           <value>
             <Attribute>
@@ -73,14 +38,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\preprocessed\Abalone.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\preprocessed\Adult2.csv">
+        <entry key="\preprocessed\Adult.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -102,97 +60,6 @@
           </value>
         </entry>
         <entry key="\preprocessed\adult.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\adult.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\branching_ratio\global_accuracy.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\branching_ratio\global_entropy.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\global_accuracy.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\global_entropy.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results2.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results33.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results_abalone.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results_adult.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results_carevaluation.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results_chesskingrookvsking.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\results_drugconsumptionquantified.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
