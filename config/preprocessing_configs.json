@@ -9,10 +9,8 @@
         "n_estimators": 300
     },
     "datasets": {
-
-
-        "Nursery": {
-            "data_path": "../data/Nursery/nursery.csv"
+        "Adult": {
+            "data_path": "../data/Adult/adult.csv"
         }
     }
 }
