@@ -66,20 +66,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\results\feature_importance\Adult.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\ChessKingRookvsKing.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\results\feature_importance\feature_importance_Adult.csv">
           <value>
             <Attribute>
@@ -130,6 +116,13 @@
           </value>
         </entry>
         <entry key="\results\feature_importance\permutation_importance_Nursery.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\results\global_entropy.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
