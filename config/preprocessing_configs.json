@@ -11,6 +11,18 @@
     "datasets": {
         "Adult": {
             "data_path": "../data/Adult/adult.csv"
+        },
+        "ChessKingRookvsKing":{
+            "data_path": "../data/ChessKingRookvsKing/chesskingrookvsking.csv"
+        },
+        "Mushroom": {
+            "data_path": "../data/Mushroom/mushroom.csv"
+        },
+        "Nursery": {
+            "data_path": "../data/Nursery/nursery.csv"
+        },
+        "Spambase": {
+            "data_path": "../data/Spambase/spambase.csv"
         }
     }
 }
