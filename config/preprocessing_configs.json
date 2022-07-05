@@ -9,6 +9,39 @@
         "n_estimators": 300
     },
     "datasets": {
+        "ElectricalGrid": {
+            "data_path": "../data/ElectricalGrid/electrical.csv"
+        },
+        "GesturePhase": {
+            "data_path": "../data/GesturePhase/a1_raw.csv"
+        },
+        "HepatisisC": {
+            "data_path": "../data/HepatisisC/HCV-Egy-Data.csv"
+            },
+        "LetterRecognition": {
+            "data_path": "../data/LetterRecognition/letterrecognition.csv"
+        },
+        "MagicGammaTelescope": {
+            "data_path": "../data/MagicGammaTelescope/magic.csv"
+        },
+        "OccupancyDetection": {
+            "data_path": "../data/OccupancyDetection/occupancydetection.csv"
+        },
+        "OnlineNewsPopularity": {
+            "data_path": "../data/OnlineNewsPopularity/onlinenewspopularity.csv"
+        },
+        "OnlineShoppers" : {
+            "data_path": "../data/OnlineShoppers/onlineshoppers.csv"
+        },
+        "OzoneLevelDetection": {
+            "data_path": "../data/OzoneLevelDetection/ozone.csv"
+        },
+        "SeismicBumps": {
+            "data_path": "../data/SeismicBumps/seismicbumps.csv"
+        },
+        "TurkyieStudentEvaluation": {
+            "data_path": "../data/TurkyieStudentEvaluation/turkiye-student-evaluation_generic.csv"
+        },
         "Adult": {
             "data_path": "../data/Adult/adult.csv"
         },
@@ -24,5 +57,6 @@
         "Spambase": {
             "data_path": "../data/Spambase/spambase.csv"
         }
+
     }
 }

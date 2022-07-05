@@ -17,6 +17,34 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\data\ElectricalGrid\Data_for_UCI_named.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\GesturePhase\a1_raw.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\HepatisisC\HCV-Egy-Data.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\HybridIndoor\dataset.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\data\Mushroom\mushroom.csv">
           <value>
             <Attribute>
@@ -31,7 +59,56 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\data\OccupancyDetection\datatraining.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\OnlineShoppers\online_shoppers_intention.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\PredictStudentDropout\predictstudentdropout.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\SeismicBumps\seismic-bumps.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\data\Spambase\spambase.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\TurkyieStudentEvaluation\turkiye-student-evaluation_generic.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\WineQuality\winequality-red.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\Yeast\yeast.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -60,62 +137,6 @@
           </value>
         </entry>
         <entry key="\preprocessed\adult.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\feature_importance_Adult.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\feature_importance_ChessKingRookvsKing.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\feature_importance_Mushroom.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\feature_importance_Nursery.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\permutation_importance_Adult.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\permutation_importance_ChessKingRookvsKing.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\permutation_importance_Mushroom.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\results\feature_importance\permutation_importance_Nursery.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
