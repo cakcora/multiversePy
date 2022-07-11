@@ -28,6 +28,7 @@ for i in range(len(configs_preprocessing)):
     raw.rename(columns={raw.columns[class_col]: 'Class'}, inplace=True)
     categorical_features = []
     cat_features = [col for col in list(raw.columns) if raw[col].dtypes == object]
+    con_features = [col for col in list(raw.columns) if raw[col].dtypes == float]
     # replace NaN with median
     for col in raw.columns:
         if np.issubdtype(raw[col].dtype, np.number):
@@ -46,7 +47,11 @@ for i in range(len(configs_preprocessing)):
 
     for col in aux[cat_features]:
         aux[col] = encoder.fit_transform(aux[col])
-    num_features = [col for col in list(aux.columns) if aux[col].dtypes != object and col != 'income_>50K']
+    num_features = [col for col in list(aux.columns) if aux[col].dtypes != object and col != 'Class']
+
+    for col in aux[con_features]:
+        aux[col] = encoder.fit_transform(aux[col])
+    num_features = [col for col in list(aux.columns) if aux[col].dtypes != float and col != 'Class']
 
     scaler = MinMaxScaler()
     aux[num_features] = scaler.fit_transform(aux[num_features])
@@ -59,13 +64,13 @@ for i in range(len(configs_preprocessing)):
     forest.fit(X_train, y_train)
     y_pred = forest.predict(X_test)
     feature_names = list(X.columns)
-
     importances = forest.feature_importances_
     std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
     forest_importances = pd.Series(importances, index=feature_names)
     fig, ax = plt.subplots()
 
     forest_importances.plot.bar(yerr=std, ax=ax, figsize=(14, 12))
+
     ax.set_title("feature importances using MDI")
     ax.set_ylabel("Mean decrease in impurity")
     plt.savefig('../results/feature_importance/' + f'feature_importance_{conf["name"]}.png')
@@ -83,24 +88,24 @@ for i in range(len(configs_preprocessing)):
     forest_importances.plot.bar(yerr=result.importances_std)
     plt.savefig('../results/feature_importance/' + f'permutation_importance_{conf["name"]}.png')
 
-    from sklearn.inspection import PartialDependenceDisplay
-    # def pdp_isolate(feature):
-    PartialDependenceDisplay.from_estimator(forest, X_data, [0, (0, 1)])
-    plt.savefig('../results/feature_importance/' + f'pdp_isolate_{conf["name"]}.png')
+    # from sklearn.inspection import PartialDependenceDisplay
+    # # def pdp_isolate(feature):
+    # PartialDependenceDisplay.from_estimator(forest, X_train, [0, (0, 1)])
+    # plt.savefig('../results/feature_importance/' + f'pdp_isolate_{conf["name"]}.png')
 
-    def pdp_interact(feature1, feature2):
-        inter1 = pdp.pdp_interact(
-            model=forest, dataset=X_train_enc_df, model_features=X_train.columns, features=[feature1, feature2]
-        )
-        fig, axes = pdp.pdp_interact_plot(
-            pdp_interact_out=inter1, feature_names=[feature1, feature2], plot_type='contour', x_quantile=False,
-            plot_pdp=False
-        )
-        axes['pdp_inter_ax'].set_yticklabels(feature1)
-        axes['pdp_inter_ax'].set_xticklabels(feature2)
-        plt.savefig('../results/feature_importance/' + f'pdp_interact_{conf["name"]}.png')
-
-    pdp_interact(X.columns[0],X.columns[1])
+    # def pdp_interact(feature1, feature2):
+    #     inter1 = pdp.pdp_interact(
+    #         model=forest, dataset=X_train, model_features=X_train.columns, features=[feature1, feature2]
+    #     )
+    #     fig, axes = pdp.pdp_interact_plot(
+    #         pdp_interact_out=inter1, feature_names=[feature1, feature2], plot_type='contour', x_quantile=False,
+    #         plot_pdp=False
+    #     )
+    #     axes['pdp_inter_ax'].set_yticklabels(feature1)
+    #     axes['pdp_inter_ax'].set_xticklabels(feature2)
+    #     plt.savefig('../results/feature_importance/' + f'pdp_interact_{conf["name"]}.png')
+    #
+    # pdp_interact(X.columns[0],X.columns[1])
 
 
 

@@ -5,12 +5,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
-from sklearn.metrics import accuracy_score
 import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy.stats
 import json
-import warnings
 import os
 import glob
 from time import perf_counter

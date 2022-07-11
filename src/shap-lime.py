@@ -244,6 +244,6 @@ for i in range(len(configs_preprocessing)):
 
     shap.initjs()
     plt.rc('font', size=15)
-    shap.summary_plot(shap_values, subsampled_test_data, show=False, plot_type="bar", plot_size=(15, 10), feature_names=X_train.columns, max_display=10)
+    shap.summary_plot(shap_values, subsampled_test_data, show=False, plot_type="bar", plot_size=(20, 15), feature_names=X_train.columns, max_display=10)
     plt.title('Shap')
     plt.savefig(f'../results/xai/Shap_summary_plot_{conf["name"]}.png')
