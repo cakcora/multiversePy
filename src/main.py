@@ -14,6 +14,8 @@ import glob
 from time import perf_counter
 import preprocess
 # from sklearn.tree import export_graphviz  # used in comment
+import warnings
+warnings.filterwarnings("ignore")
 
 CONFIG_FILE = '../config/run_config.json'
 
@@ -298,8 +300,10 @@ def get_data(config):
 	:param config: dataset configuration
 	:return:        dataframe
 	"""
+	print("Here")
 	data = pd.read_csv(config['preprocessed_dir'] + config['dataset'], header=None)
 	data.rename(columns={len(data.columns) - 1: 'Class'}, inplace=True)  # rename last col to 'Class'
+
 
 	if 0 < config['sample_size'] <= len(data.index):
 		return data.sample(n=config['sample_size'])
