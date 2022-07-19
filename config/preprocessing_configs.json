@@ -9,6 +9,85 @@
         "n_estimators": 300
     },
     "datasets": {
+        "CarEvaluation":{
+            "data_path": "../data/CarEvaluation/car.data"
+        },
+        "AuctionVerification":{
+            "data_path": "../data/AuctionVerification/AuctionVerification.csv"
+        },
+        "CouponRecommendation":{
+            "data_path": "../data/CouponRecommendation/in-vehicle-coupon-recommendation.csv"
+        },
+        "FirmTeacherClaveDirection":{
+            "data_path": "../data/FirmTeacherClaveDirection/ClaveVectors_Firm-Teacher_Model.csv"
+        },
+        "ObesityDataSet":{
+            "data_path": "../data/ObesityDataSet/ObesityDataset_raw_and_data_sinthetic.csv"
+        },
+        "EyeState":{
+            "data_path": "../data/EyeState/EEG Eye State.arff"
+        },
+        "DefaultOfCreditCardClient":{
+            "data_path": "../data/DefaultOfCreditCardClient/default of credit card clients.csv"
+        },
+        "CrowdsourcedMapping":{
+            "data_path": "../data/CrowdsourcedMapping/training.csv"
+        },
+        "Biodegradation":{
+            "data_path": "../data/Biodegradation/biodeg_process.csv"
+        },
+        "Postures":{
+            "data_path": "../data/Postures/Postures.csv"
+        },
+        "MiceProteinExpression":{
+            "data_path": "../data/MiceProteinExpression/Data_Cortex_Nuclear.csv"
+        },
+        "ShillBidding":{
+            "data_path": "../data/ShillBidding/ShillBiddingDataset.csv"
+        },
+        "GenderGap":{
+            "data_path": "../data/GenderGap/data.csv"
+        },
+        "SteelPlateFault":{
+            "data_path": "../data/SteelPlateFault/Faults.csv"
+        },
+        "SensorlessDriveDiagnosis":{
+            "data_path": "../data/SensorlessDriveDiagnosis/Sensorless_drive_diagnosis.csv"
+        },
+        "PolishCompaniesBankruptcy":{
+            "data_path": "../data/PolishCompaniesBankruptcy/1year.csv"
+        },
+        "PhishingWebsites":{
+            "data_path": "../data/PhishingWebsites/PhishingWebsites.csv"
+        },
+        "Diabetes":{
+            "data_path": "../data/Diabetes/diabetic_data_process.csv"
+        },
+        "StateLog":{
+            "data_path": "../data/StateLog/sat.csv"
+        },
+        "Yeast":{
+            "data_path": "../data/Yeast/yeast.csv"
+        },
+        "RecognitionHandWrittenDigits":{
+            "data_path": "../data/RecognitionHandWrittenDigits/optdigits.tra"
+        },
+        "WineQuality":{
+            "data_path": "../data/WineQuality/winequality-white-process.csv"
+        },
+        "BankMarketing":{
+            "data_path": "../data/BankMarketing/bank-additional-full-process.csv"
+        },
+        "Avila":{
+            "data_path": "../data/Avila/avila-tr.txt"
+        },
+        "DryBeanDataset":{
+            "data_path": "../data/DryBeanDataset/Dry_Bean_Dataset.csv"
+        },
+        "MaternalHealthRisk":{
+            "data_path": "../data/MaternalHealthRisk/MaternalHealthRiskDataSet.csv"
+        },
+
         "ElectricalGrid": {
             "data_path": "../data/ElectricalGrid/electrical.csv"
         },
@@ -25,10 +104,7 @@
             "data_path": "../data/MagicGammaTelescope/magic.csv"
         },
         "OccupancyDetection": {
-            "data_path": "../data/OccupancyDetection/occupancydetection.csv"
-        },
-        "OnlineNewsPopularity": {
-            "data_path": "../data/OnlineNewsPopularity/onlinenewspopularity.csv"
+            "data_path": "../data/OccupancyDetection/Occupancy_Estimation.csv"
         },
         "OnlineShoppers" : {
             "data_path": "../data/OnlineShoppers/onlineshoppers.csv"

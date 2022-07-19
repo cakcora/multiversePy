@@ -23,7 +23,7 @@ configs_preprocessing = preprocess.get_configs()
 
 for i in range(len(configs_preprocessing)):
     conf = configs_preprocessing[i]
-    print(conf["name"])
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++\n"+conf["name"])
     df = pd.read_csv(conf["data_path"], sep=',', header=0)
     class_col = conf['class_column'] if conf['class_column'] != -1 else len(df.columns) - 1
     df.rename(columns={df.columns[class_col]: 'Class'}, inplace=True)
