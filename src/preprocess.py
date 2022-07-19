@@ -104,7 +104,7 @@ if __name__ == '__main__':
 	for i in range(len(configs)):
 		conf = configs[i]
 		dataset_name = conf["name"]
-		raw = pd.read_csv(conf["data_path"], sep=',', header=0)
+		raw = pd.read_csv(conf["data_path"], sep=',', header=0, na_values='?')
 		preprocess_dataset_with_raw_data(conf, raw=raw)
 
 	# print(f'Time: {perf_counter() - t:.2f}')
