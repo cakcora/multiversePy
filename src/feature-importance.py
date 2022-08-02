@@ -1,25 +1,25 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn
 import preprocess
-import shap
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.inspection import permutation_importance
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import RobustScaler
-import cufflinks as cf
-import seaborn as sns
+# import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
-import dalex as dx
-from pdpbox import pdp
-cf.set_config_file(sharing='public',theme='pearl',offline=False)
-cf.go_offline()
-
+from sklearn.metrics import confusion_matrix, accuracy_score
+import scipy
+import csv
 
 configs_preprocessing = preprocess.get_configs()
 
+with open('acc_entr.csv', 'w') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Dataset", "Accuracy", "Entropy"])
 for i in range(len(configs_preprocessing)):
     conf = configs_preprocessing[i]
     print(conf["name"])
@@ -71,6 +71,20 @@ for i in range(len(configs_preprocessing)):
 
     forest_importances.plot.bar(yerr=std, ax=ax, figsize=(14, 12))
 
+    # #accuracy
+    # print("accuracy")
+    # acc = sklearn.metrics.accuracy_score(y_test, y_pred)
+    # print(acc)
+    # #entropy
+    # matrix = confusion_matrix(y_test, y_pred)
+    # print("entropy")
+    # entropy = scipy.stats.entropy(matrix.flatten())
+    # print(entropy)
+    #
+    # with open('acc_entr.csv', 'a', newline='') as file:
+    #     writer = csv.writer(file)
+    #     writer.writerow([conf["name"], acc, entropy])
+
     ax.set_title("feature importances using MDI")
     ax.set_ylabel("Mean decrease in impurity")
     plt.savefig('../results/feature_importance/' + f'feature_importance_{conf["name"]}.png')
@@ -88,24 +102,24 @@ for i in range(len(configs_preprocessing)):
     forest_importances.plot.bar(yerr=result.importances_std)
     plt.savefig('../results/feature_importance/' + f'permutation_importance_{conf["name"]}.png')
 
-    # from sklearn.inspection import PartialDependenceDisplay
-    # # def pdp_isolate(feature):
-    # PartialDependenceDisplay.from_estimator(forest, X_train, [0, (0, 1)])
-    # plt.savefig('../results/feature_importance/' + f'pdp_isolate_{conf["name"]}.png')
+    from sklearn.inspection import PartialDependenceDisplay
+    # def pdp_isolate(feature):
+    PartialDependenceDisplay.from_estimator(forest, X_train, [0, (0, 1)])
+    plt.savefig('../results/feature_importance/' + f'pdp_isolate_{conf["name"]}.png')
 
-    # def pdp_interact(feature1, feature2):
-    #     inter1 = pdp.pdp_interact(
-    #         model=forest, dataset=X_train, model_features=X_train.columns, features=[feature1, feature2]
-    #     )
-    #     fig, axes = pdp.pdp_interact_plot(
-    #         pdp_interact_out=inter1, feature_names=[feature1, feature2], plot_type='contour', x_quantile=False,
-    #         plot_pdp=False
-    #     )
-    #     axes['pdp_inter_ax'].set_yticklabels(feature1)
-    #     axes['pdp_inter_ax'].set_xticklabels(feature2)
-    #     plt.savefig('../results/feature_importance/' + f'pdp_interact_{conf["name"]}.png')
-    #
-    # pdp_interact(X.columns[0],X.columns[1])
+    def pdp_interact(feature1, feature2):
+        inter1 = pdp.pdp_interact(
+            model=forest, dataset=X_train, model_features=X_train.columns, features=[feature1, feature2]
+        )
+        fig, axes = pdp.pdp_interact_plot(
+            pdp_interact_out=inter1, feature_names=[feature1, feature2], plot_type='contour', x_quantile=False,
+            plot_pdp=False
+        )
+        axes['pdp_inter_ax'].set_yticklabels(feature1)
+        axes['pdp_inter_ax'].set_xticklabels(feature2)
+        plt.savefig('../results/feature_importance/' + f'pdp_interact_{conf["name"]}.png')
+
+    pdp_interact(X.columns[0],X.columns[1])
 
 
 
