@@ -5,9 +5,9 @@
     "n_estimators": 300,
     "sample_size": 0,
     "param_grid": {
-        "criterion": ["gini", "entropy"],
-        "min_samples_split": [0.001, 0.01, 0.02],
-        "max_features": ["log2", "sqrt"]
+        "criterion": ["entropy"],
+        "min_samples_split": [0.01],
+        "max_features": ["sqrt"]
     },
     "test_fraction": 0.25,
     "out_csv_dir": "../results/",
