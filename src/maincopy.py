@@ -8,6 +8,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy.stats
 import json
+from sklearn import metrics
 import warnings
 import os
 import glob
@@ -16,7 +17,7 @@ import preprocess
 # from sklearn.tree import export_graphviz  # used in comment
 import warnings
 warnings.filterwarnings("ignore")
-
+flat_matrix = []
 CONFIG_FILE = '../config/run_config.json'
 
 
@@ -151,34 +152,53 @@ def conf_matrix(prepped_data, name, config):
 			stratify=None  # do not stratify
 		)
 
-	major_max = min(config['major_max'], max(100 // len(pd.unique(prepped_data['Class'])), 1))  # cap major max
-	for major in range(0, major_max+1, 5):
+	# major_max = min(config['major_max'], max(100 // len(pd.unique(prepped_data['Class'])), 1))  # cap major max
+	major_max = 40
+	flat_matrix_df = pd.DataFrame()
+	for major in range(0, major_max+1, 2):
 		maj_poison_y = poison(min_train_y, major)
 		df = pd.DataFrame()
 
-		for minor in range(0, config['minor_max']+1,5):
+		for minor in range(0, config['minor_max']+1,2):
 			print("\nmajor:", major, " minor:", minor)
 			min_poison_y = poison(maj_poison_y, minor, True)
 
 			# config['param_grid'] = {}  # speed up for debugging by not optimizing
-			grid = GridSearchCV(
-				estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
-				param_grid=config['param_grid'],
-				cv=config['n_cv_folds'],
-				n_jobs=10
-			)
-			grid.fit(min_train_x, min_poison_y)
+			clf = RandomForestClassifier(n_estimators=config['n_estimators'])
+			clf.fit(min_train_x, min_poison_y)
+			minor_test_accuracy = accuracy_score(min_y_test, clf.predict(min_x_test))
+			minor_train_accuracy = accuracy_score(min_train_y, clf.predict(min_train_x))
+			print("Verification Accuracy: " + str(minor_train_accuracy))
+			print("Test Accuracy: " + str(minor_test_accuracy))
+			accuracy_list.append((major, minor, minor_train_accuracy, minor_test_accuracy))
 
-			minor_test_accuracy = accuracy_score(min_y_test, grid.best_estimator_.predict(min_x_test))
-			accuracy_list.append((major, minor, grid.best_score_, minor_test_accuracy))
+			acc_df = pd.DataFrame(accuracy_list, columns=['major', 'minor', 'minor_train_accuracy',
+															  'minor_test_accuracy']).set_index('major')
 
-			print(f'\tOptimized parameters = {grid.best_params_}')  # TODO: log this
-			print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
-			print(f'\tTest accuracy:{minor_test_accuracy:16.5f}')
+			acc_df.to_csv(f'../results/accuracies/{name}.csv')
 
-			result = mineTrees(grid.best_estimator_)
+			result = mineTrees(clf)
 			result['minor'] = minor
 			df = df.append(result)
+
+			# grid = GridSearchCV(
+			# 	estimator=RandomForestClassifier(n_estimators=config['n_estimators']),
+			# 	param_grid=config['param_grid'],
+			# 	cv=config['n_cv_folds'],
+			# 	n_jobs=10
+			# )
+			# grid.fit(min_train_x, min_poison_y)
+
+			# minor_test_accuracy = accuracy_score(min_y_test, grid.best_estimator_.predict(min_x_test))
+			# accuracy_list.append((major, minor, grid.best_score_, minor_test_accuracy))
+			#
+			# print(f'\tOptimized parameters = {grid.best_params_}')  # TODO: log this
+			# print(f'\tValidation accuracy:{grid.best_score_:10.5f}')
+			# print(f'\tTest accuracy:{minor_test_accuracy:16.5f}')
+			#
+			# result = mineTrees(grid.best_estimator_)
+			# result['minor'] = minor
+			# df = df.append(result)
 
 		y = df['minor']
 		x = df.drop('minor', axis=1)
@@ -189,16 +209,32 @@ def conf_matrix(prepped_data, name, config):
 		rf_second_level = RandomForestClassifier(n_estimators=config['n_estimators'])
 		rf_second_level.fit(x_train, y_train)
 
+		# y_train_pred = rf_second_level.predict(x_train)
 		y_pred_test = rf_second_level.predict(x_test)  # test second level model
 
-		# The commented line is what was added during the meeting, however it was
-		# throwing errors. This seems to be corrected now?
+		# print("Verification accuracy: " + metrics.accuracy_score(y_train, y_train_pred))
+		# print("Test accuracy: " + metrics.accuracy_score(x_test, y_pred_test))
+
 		# matrix = confusion_matrix(test_data.minor, y_pred_test)
 		matrix = confusion_matrix(y_test, y_pred_test)
+		print(matrix)
+		flat_matrix = matrix.flatten()
+		flat_matrix_t = flat_matrix.transpose()
+		# flat_matrix_df = pd.DataFrame(data=flat_matrix,).T
+		flat_matrix_df.append(flat_matrix_t.tolist())
+		# cols = ['Dataset', 'major', range(1,121)]
+		# flat_matrix_t_df = pd.DataFrame(data=flat_matrix).T
+		# flat_matrix_t_df.append(flat_matrix_df)
+		# flat_matrix_t_df.insert(0, "Major", major)
+		# flat_matrix_t_df.insert(1, "Dataset", f'{name}')
+
+		print(flat_matrix_df)
+		flat_matrix_df.to_csv(f'../results/matrices/flat_matrices.csv',  mode='a')
 
 		entropy = scipy.stats.entropy(matrix.flatten())
 		entropy_list.append((major, entropy))
 
+		rf_second_level.score(x_train, y_train)
 		if major == 0:
 			first_matrix = matrix
 

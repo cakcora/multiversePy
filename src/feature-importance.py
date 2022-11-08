@@ -102,24 +102,24 @@ for i in range(len(configs_preprocessing)):
     forest_importances.plot.bar(yerr=result.importances_std)
     plt.savefig('../results/feature_importance/' + f'permutation_importance_{conf["name"]}.png')
 
-    from sklearn.inspection import PartialDependenceDisplay
-    # def pdp_isolate(feature):
-    PartialDependenceDisplay.from_estimator(forest, X_train, [0, (0, 1)])
-    plt.savefig('../results/feature_importance/' + f'pdp_isolate_{conf["name"]}.png')
+    # from sklearn.inspection import PartialDependenceDisplay
+    # # def pdp_isolate(feature):
+    # PartialDependenceDisplay.from_estimator(forest, X_train, [0, (0, 1)])
+    # plt.savefig('../results/feature_importance/' + f'pdp_isolate_{conf["name"]}.png')
 
-    def pdp_interact(feature1, feature2):
-        inter1 = pdp.pdp_interact(
-            model=forest, dataset=X_train, model_features=X_train.columns, features=[feature1, feature2]
-        )
-        fig, axes = pdp.pdp_interact_plot(
-            pdp_interact_out=inter1, feature_names=[feature1, feature2], plot_type='contour', x_quantile=False,
-            plot_pdp=False
-        )
-        axes['pdp_inter_ax'].set_yticklabels(feature1)
-        axes['pdp_inter_ax'].set_xticklabels(feature2)
-        plt.savefig('../results/feature_importance/' + f'pdp_interact_{conf["name"]}.png')
-
-    pdp_interact(X.columns[0],X.columns[1])
+    # def pdp_interact(feature1, feature2):
+    #     inter1 = pdp.pdp_interact(
+    #         model=forest, dataset=X_train, model_features=X_train.columns, features=[feature1, feature2]
+    #     )
+    #     fig, axes = pdp.pdp_interact_plot(
+    #         pdp_interact_out=inter1, feature_names=[feature1, feature2], plot_type='contour', x_quantile=False,
+    #         plot_pdp=False
+    #     )
+    #     axes['pdp_inter_ax'].set_yticklabels(feature1)
+    #     axes['pdp_inter_ax'].set_xticklabels(feature2)
+    #     plt.savefig('../results/feature_importance/' + f'pdp_interact_{conf["name"]}.png')
+    #
+    # pdp_interact(X.columns[0],X.columns[1])
 
 
 

@@ -2,36 +2,43 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.express as px
+from functools import reduce
 
-df_entropy1 = pd.read_csv('../results/entropy/eyestate.csv', header=0)
-df_entropy2 = pd.read_csv('../results/entropy/firmteacherclavedirection.csv', header=0)
-df_entropy3 = pd.read_csv('../results/entropy/gendergap.csv', header=0)
-df_entropy4 = pd.read_csv('../results/entropy/gesturephase.csv', header=0)
-df = pd.DataFrame({"labels": ['Q1', 'Q2', 'Q3', 'Q4']})
+# breastcancer = pd.read_csv('../results/entropy/BreastCancer.csv', header=0)
+# adult = pd.read_csv('../results/entropy/adult.csv', header=0)
+# ionosphere = pd.read_csv('../results/entropy/Ionosphere.csv', header=0)
+# spambase = pd.read_csv('../results/entropy/spambase.csv', header=0)
+# liverdisorder = pd.read_csv('../results/entropy/LiverDisorder.csv', header=0)
+# breastcancerwisconsin = pd.read_csv('../results/entropy/BreastCancerWisconsin.csv', header=0)
+# biodegradation = pd.read_csv('../results/entropy/biodegradation.csv', header=0)
+# winequality = pd.read_csv('../results/entropy/winequality.csv', header=0)
+# heartdisease = pd.read_csv('../results/entropy/HeartDisease.csv', header=0)
+# mushroom = pd.read_csv('../results/entropy/mushroom.csv', header=0)
+#
+# df_binary = [breastcancer, adult, ionosphere, spambase, liverdisorder, breastcancerwisconsin, biodegradation,winequality, heartdisease,mushroom]
+# final_binary_df = reduce(lambda left,right: pd.merge(left,right,on=['major'],
+#                                             how='outer'), df_binary)
+#
+# print(final_binary_df.columns)
+# final_binary_df.to_csv(f'../results/entropy/entropy_results.csv')
+# fig = px.line(final_binary_df, x="major", y=final_binary_df.columns[1:11], markers=True)
+# fig.update_traces(textposition="bottom right")
+# fig.show()
 
-def plot(df_ent1, df_ent2, df_ent3, df_ent4):
-	"""
-	Plots the recorded entropy values and the final confusion matrix.
-	:param df_entropy:      Entropy dataframe. Should contain index col of Major values, 'Entropy' column of entropy values.
-	:param matrix:          Last confusion matrix
-	:param first_matrix     First confusion matrix
-	:param name:            name of dataset
-	:param config           Configuration dictionary
-	"""
-	# sns.set(rc={'figure.figsize': (20, 10)})
-	# ax = sns.regplot(data=df)
-	# ax = sns.regplot(x=df_ent1.index, y=df_ent1.index,fit_reg=False, ci=None,label='EGG Eye State')
-	# ax = sns.regplot(x=df_ent2.index, y=df_ent2['firmteacherclavedirection_entropy'],fit_reg=False,ci=None, label='Firm Tacher Clave Direction')
-	# ax = sns.regplot(x=df_ent3.index, y=df_ent3['gendergap_entropy'],fit_reg=False,ci=None, label='Gender Gap')
-	# ax = sns.regplot(x=df_ent4.index, y=df_ent4['gesturephase_entropy'],fit_reg=False,ci=None, label='Gesture Phase')
-	# ax.legend()
-	# ax.set(title="Conf Matrix Entropy", xlabel="Major", ylabel="Entropy")
 
-	fig = px.line(df_entropy4, x=df_ent4.index, y=df_ent4['gesturephase_entropy'], color="country", text="year")
-	fig.update_traces(textposition="bottom right")
-	fig.show()
+winequality = pd.read_csv('../results/entropy/winequality.csv', header=0)
+heartdisease = pd.read_csv('../results/entropy/HeartDisease.csv', header=0)
+mushroom = pd.read_csv('../results/entropy/mushroom.csv', header=0)
+abalone = pd.read_csv('../results/entropy/Abalone.csv', header=0)
+carevaluation = pd.read_csv('../results/entropy/CarEvaluation.csv', header=0)
+glassidentification = pd.read_csv('../results/entropy/GlassIdentification.csv', header=0)
 
-	plt.savefig('../results/entropy/entropy2.png')
-	plt.close()
 
-plot(df_entropy1, df_entropy2, df_entropy3, df_entropy4)
+df_nonbinary = [winequality, heartdisease, mushroom, abalone, carevaluation,glassidentification]
+final_nonbinary_df = reduce(lambda left,right: pd.merge(left,right,on=['major'],
+                                            how='outer'), df_nonbinary)
+print(final_nonbinary_df.columns)
+final_nonbinary_df.to_csv(f'../results/entropy/entropy_results.csv')
+fig = px.line(final_nonbinary_df, x="major", y=final_nonbinary_df.columns[1:7], markers=True)
+fig.update_traces(textposition="bottom right")
+fig.show()
