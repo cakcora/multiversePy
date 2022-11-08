@@ -6,7 +6,6 @@
     "sample_size": 0,
     "param_grid": {
         "criterion": ["entropy"],
-        "min_samples_split": [0.01],
         "max_features": ["sqrt"]
     },
     "test_fraction": 0.25,
@@ -15,9 +14,6 @@
     "preprocessed_dir": "../preprocessed/",
     "matrix_dir": null,
     "datasets": [
-        "adult.csv",
-        "chesskingrookvsking.csv",
-        "mushroom.csv",
-        "nursery.csv"
+        "BreastCancer.csv"
     ]
 }
