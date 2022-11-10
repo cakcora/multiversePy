@@ -10,7 +10,7 @@ for file in os.listdir("../../results/accuracies/"):
     result_major = result_major.drop("minor_train_accuracy", axis=1)
     result_major = result_major.drop("minor", axis=1)
     # print(result_major.head())
-
+    sns.set(rc={"figure.figsize": (15, 10)})
     line_plot = sns.lineplot(data = result_major, x = 'major', y='minor_test_accuracy')
     plt.legend(labels=["Adult",'BreastCancer','CarEvaluation',"HeartDisease","Nursery"])
 fig = line_plot.get_figure()
