@@ -255,6 +255,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\results\accuracy_test_data\breastcancer.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\results\accuracy_test_data\carevaluation.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\results\entropy\BreastCancer.csv">
           <value>
             <Attribute>
